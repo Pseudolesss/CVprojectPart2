@@ -1,15 +1,23 @@
 import numpy as np
 
-def dist(elps1, elps2):
+def dist(elps1, elps2, weight=[1/2, 1/2, 1/5, 1/3, 1/3]):
 	"""
 	Give the distance between the two ellipses
 	@Args:
-		elps1:
-		elps2:
+		elps1:		[np array of 5 values] the values are Xc, Yc (the coord. of center), theta (angle of main axis in 
+		            degree), a (half length of main axis), b ((half length of sub axis).
+		elps2:		[np array of 5 values] the values are Xc, Yc (the coord. of center), theta (angle of main axis in 
+		            degree), a (half length of main axis), b ((half length of sub axis).
+		weight:		[np array of 5 values] how much error is accepted for each parameters. (eg. for the weight = [1/2,
+		            1/2, 1/5, 1/3, 1/3], this means, an error of 2 pixels or lower is OK for Xc and Yc, an error of 5 
+		            degrees or less is OK for theta and an error of 3 pixels or more is OK for the axis. Those cumulated
+		            errors are OK.)
 	@Return
 		[float] distance between the two ellipses
 	"""
-	return abs(elps1-elps2)
+	diff = abs(elps1-elps2)
+	diff = diff*weight
+	return np.sum(diff)
 
 def metric_elps(ground_truth, detected):
 	"""
@@ -20,7 +28,7 @@ def metric_elps(ground_truth, detected):
 	@Return:
 		[float] evaluation of the detection method between 0 (worst) and 1 (best). (-1 if error)
 	"""
-	debug = True
+	debug = False
 	l1 = len(ground_truth)
 	l2 = len(detected)
 	
@@ -28,7 +36,9 @@ def metric_elps(ground_truth, detected):
 		return -1
 		
 	eval = 0
-	tresh_dist = 2 # distance below which more precision doesn't make sense (label not that precise)
+	tresh_dist = 5 # distance below which more precision doesn't make sense (label not that precise)
+				   # Value is 5 because it is assumed that the weight of dist() has been tuned such that the max 
+				   # accepted error for each of the 5 parameters would be equal to 1. Thus 1*5 = 5.
 		
 	for i in range(l1):
 		l1i = len(ground_truth[i])
@@ -66,6 +76,6 @@ def metric_elps(ground_truth, detected):
 			
 			
 if __name__ == "__main__":
-	gt = [[1,3.5]]
-	det = [[4,3.5,5]]
-	print(f'Final metrics = {metric_elps(gt, det)}')
+	gt = [[np.array([1, 3.5, 2, 2, 1]), np.array([4, 2.5, 2, 7, 1]), np.array([1, 3.5, 7, 2, 8])]]
+	dt = [[np.array([4, 5.5, 5, 2, 1]), np.array([8, 3.5, 15, 20, 1]), np.array([3.5, 5.5, 13, 2, 8])]]
+	print(f'Final metrics = {metric_elps(gt, dt)}')

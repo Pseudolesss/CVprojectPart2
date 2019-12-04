@@ -1,6 +1,22 @@
-
 # Evaluation metrics
 ## Ellipses
+### Distance between two ellipses
+It is assumed that the ellipses are defined by 5 parameters:
+- Xc : the vert. coord of the center of the ellipse
+- Yc : the horiz. coord of the center of the ellipse
+- theta : the angle of the main axis
+- a  : half the length of main axis
+- b  : half the length of sub axis
+
+~~~
+elps1 = [Xc1, Yc1, theta1, a1, b1]
+elps2 = [Xc2, Yc2, theta2, a2, b2]
+W = [Wx, Wy, Wt, Wa, Wb]
+dist = Wx * abs(Xc1-Xc2) + Wy * abs(Yc1-Yc2) + Wt * abs(theta1-theta2) + Wa * abs(a1-a2) + Wb * abs(b1-b2)
+~~~
+The weight W is tuned such that the maximal acceptable error on each parameters will lead to an increase in the distance of 1. Thus if we want an acceptable error of theta of 15 degrees, we fix Wt = 1/15. This way, we can fix the tresh_dist = 5. This is the maximal acceptable distance between two ellipses. By fixing it at 5, we only need to tune W. The parameters W will depend on the precision expected on the labelled ellipse. (If we assume that the precision of labelling for the center is not lower than 2, then we can put Xc = 2 and Yc = 2).
+
+### Evaluation on multiple images
 Let ground_truth and detected both being a list of list of ellipses, respectivelly being the labeled ellipses for each images and the detected ellipses for each images. The evaluation is done on the following pseudo-code:
 
 ~~~
