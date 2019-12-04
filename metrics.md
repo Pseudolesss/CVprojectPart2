@@ -30,7 +30,7 @@ metrics_elps(ground_truth, detected, tresh_dist):
     return eval/num_image
 ~~~
 
-In other words, the evaluation metric give a value between 0 and 1, 1 being the best accuracy. The evaluation for multiple images is the mean of all image evaluations. For each image, the evaluation of this images is a fraction. Let f(x) = min(1, tresh_dist/x), a function which returns 1 if x < tresh_dist and something < 1 in other cases. The choice of the tresh_dist is done such that a distance lower than it doesn't make sense compared to the precision of the labelling.
+In other words, the evaluation metric give a value between 0 and 1, 1 being the best accuracy. The evaluation for multiple images is the mean of all image evaluations. For each image, the evaluation of this images is a fraction. Let ![aaa](https://github.com/Pseudolesss/CVprojectPart2/tree/master/Documentations/gifs/CodeCogsEqn.gif "Logo Title Text 1"), a function which returns 1 if x < tresh_dist and something < 1 in other cases. The choice of the tresh_dist is done such that a distance lower than it doesn't make sense compared to the precision of the labelling.
 
 The numerator is the sum of function f on the smallest distances between the detected ellipses and the labeled ellipses where each detected and labeled ellipse can only be used once. When the number of detected and labeled ellipses aren't the same, the distance are computed until no pair can be made.
 
