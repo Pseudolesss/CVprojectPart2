@@ -102,7 +102,7 @@ def get_model_data_eye():
         if image_name in image_annotations:
             annotations_list.append(image_annotations[image_name])
         else:
-            print("ERROR, no annotation corresponding to image")
+            annotations_list.append([])
 
     return images_list, annotations_list
 
