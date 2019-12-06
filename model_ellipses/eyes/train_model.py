@@ -67,10 +67,10 @@ def extract_annotations_soccer():
             for elem in points:
                 elem[1] = 240 - elem[1]
 
-            min_x = 0
-            max_x = math.inf
-            min_y = 0
-            max_y = math.inf
+            min_x = +math.inf
+            max_x = -math.inf
+            min_y = +math.inf
+            max_y = -math.inf
             for x, y in points:
                 min_x = min(min_x, x)
                 min_y = min(min_y, y)
@@ -79,7 +79,7 @@ def extract_annotations_soccer():
 
             if image_name in images_annotations:
                 images_annotations[image_name] = images_annotations[
-                                                     image_name] + [min_x, min_y, max_x, max_y]
+                                                     image_name] + [[min_x, min_y, max_x, max_y]]
             else:
                 images_annotations[image_name] = [[min_x, min_y, max_x, max_y]]
 
@@ -110,7 +110,7 @@ def get_model_data_eye():
 def get_model_data_soccer():
     image_names = []
     images_list = []
-    result = list(Path("../../images_database/soccer/partial/").glob('**/*.png'))
+    result = list(Path("../../images_database/soccer/preprocessed1/").glob('elps*'))
     for file in result:  # fileName
         images_list.append(
             cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
@@ -131,7 +131,7 @@ def get_model_data_soccer():
                     biggest_annotation = annotation
             annotations_list.append(biggest_annotation)
         else:
-            print("ERROR, no annotation corresponding to image")
+            annotations_list.append([])
 
     return images_list, annotations_list
 
@@ -139,3 +139,5 @@ def get_model_data_soccer():
 if __name__ == '__main__':
     images_list_eye, annotations_list_eye = get_model_data_eye()
     images_list_soccer, annotations_list_soccer = get_model_data_soccer()
+    print(np.shape(images_list_eye), np.shape(annotations_list_eye))
+    print(np.shape(images_list_soccer), np.shape(annotations_list_soccer))
