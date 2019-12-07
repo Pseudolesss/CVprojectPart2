@@ -89,7 +89,7 @@ def extract_annotations_soccer():
 def get_model_data_eye():
     image_names = []
     images_list = []
-    result = list(Path("../../images_database/eyes/partial/").glob('**/*.png'))
+    result = list(Path("../../images_database/eyes/partial/").glob('*.png'))
     for file in result:  # fileName
         images_list.append(
             cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
@@ -105,6 +105,18 @@ def get_model_data_eye():
             annotations_list.append([])
 
     return images_list, annotations_list
+
+
+def get_no_ellipse_eye():
+    image_names = []
+    images_list = []
+    result = list(Path("../../images_database/eyes/noEllipses/").glob('*noelps_eye*'))
+
+    for file in result:  # fileName
+        images_list.append(
+            cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
+
+    return images_list
 
 
 def get_model_data_soccer():
@@ -125,7 +137,7 @@ def get_model_data_soccer():
             max_size = 0
             biggest_annotation = []
             for annotation in image_annotations[image_name]:
-                size = (annotation[2]-annotation[0])*(annotation[3]-annotation[1])
+                size = (annotation[2] - annotation[0]) * (annotation[3] - annotation[1])
                 if size > max_size:
                     max_size = size
                     biggest_annotation = annotation
@@ -136,8 +148,161 @@ def get_model_data_soccer():
     return images_list, annotations_list
 
 
+import tensorflow as tf
+from keras.models import Sequential, model_from_json
+from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout, Reshape
+from keras.losses import binary_crossentropy
+from keras.optimizers import SGD
+from keras_preprocessing.image import ImageDataGenerator
+
+def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_list_eye_no_elps, TVT_Ratio):
+    # open session to use GPU for training model
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    tf.keras.backend.set_session(tf.Session(config=config))
+
+    # Eye images dims
+    (img_height, img_width) = (240, 320)
+
+    batch_size = 100
+    nb_epochs = 30
+
+    train_data_dir = "../../images_database/Model_EYES/classifier/"  # relative
+
+    # preparing input values (uint8 images) and output values (boolean)
+    # We will call an algorithm splitting the Dataset into Training, Validation and Test sets
+    X = images_list_eye.extend(images_list_eye_no_elps)
+    Y = len(images_list_eye) * [True]
+    Y.extend(len(images_list_eye_no_elps) * [False])
+
+
+
+    # Start creating the model
+    model = Sequential(name=modelName)
+
+    # resize input image
+    #TODO CHECK INPUT REAL SIZE OF IMAGES GENERATED get dims (100, 240, 320, 3) 100=>? 3=>? (samples, height, width, channels) if dataFormat by default
+
+    input_shape = (img_height, img_width, 1)
+    # input_shape = (img_height, img_width)
+
+    # nb_filter, kernel sizes, input shape of the model
+    model.add(Conv2D(32, (3, 3), activation="relu", input_shape=input_shape))
+
+    # Max pooling to reduce output dimension
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    model.add(Conv2D(64, (3, 3), activation="relu"))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    model.add(Conv2D(128, (3, 3), activation="relu"))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    model.add(Conv2D(256, (3, 3), activation="relu"))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    # Layers for fully connected network and connect it to boolean output
+    model.add(Flatten())
+    model.add(Dense(1, activation="sigmoid"))
+
+    # optimizer
+    # learning rate, momentum to pass over local extrema
+    opt = SGD(lr=0.01, momentum=0.9)
+
+    # compile model
+    model.compile(loss="binary_crossentropy", optimizer=opt, metrics=['accuracy'])
+
+
+
+
+    #TODO uses keras capability to augment dataset through image generator
+
+
+    #TODO take into account TVT ratio
+    train_datagen = ImageDataGenerator(rescale=0,
+                                       shear_range=0,  # cisaillement
+                                       zoom_range=0., #0.1
+                                       width_shift_range=0., #0.1  # percentage or pixel number
+                                       height_shift_range=0., #0.1  # percentage or pixel number
+                                       horizontal_flip=False, # True
+                                       dtype='uint8',
+                                       validation_split=0.2)  # set validation split
+
+    train_generator = train_datagen.flow_from_directory(
+        train_data_dir,
+        color_mode="grayscale",
+        target_size=(img_height, img_width),
+        batch_size=batch_size,
+        class_mode='binary',
+        subset='training')  # set as training data
+
+    validation_generator = train_datagen.flow_from_directory(
+        train_data_dir,  # same directory as training data
+        color_mode="grayscale",
+        target_size=(img_height, img_width),
+        batch_size=batch_size,
+        class_mode='binary',
+        subset='validation')  # set as validation data
+
+    model.fit_generator(
+        train_generator,
+        steps_per_epoch=train_generator.samples // batch_size,
+        validation_data=validation_generator,
+        validation_steps=validation_generator.samples // batch_size,
+        epochs=nb_epochs)
+
+    test_generator = train_datagen.flow_from_directory(
+        train_data_dir,  # same directory as training data
+        color_mode="grayscale",
+        target_size=(img_height, img_width),
+        batch_size=batch_size,
+        class_mode='binary',)
+
+    # model.fit(X, Y, validation_split=0.15, epochs=nb_epochs)
+
+    # # evaluate the model
+    # scores = model.evaluate_generator(test_generator, steps=test_generator.n)
+    # print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
+
+    # Save model to json and Weights to H5 files
+
+    # serialize model to JSON
+    model_json = model.to_json()
+    with open("./model.json", "w") as json_file:
+        json_file.write(model_json)
+    # serialize weights to HDF5
+    model.save_weights("./model.h5")
+    print("Saved model to disk")
+
+    # # fit model
+    # history = model.fit(trainX, trainy, validation_data=(testX, testy), epochs=200, verbose=0)
+    # # evaluate the model
+    # _, train_acc = model.evaluate(trainX, trainy, verbose=0)
+    # _, test_acc = model.evaluate(testX, testy, verbose=0)
+    # print('Train: %.3f, Test: %.3f' % (train_acc, test_acc))
+    # # plot loss during training
+    # pyplot.subplot(211)
+    # pyplot.title('Loss')
+    # pyplot.plot(history.history['loss'], label='train')
+    # pyplot.plot(history.history['val_loss'], label='test')
+    # pyplot.legend()
+    # # plot accuracy during training
+    # pyplot.subplot(212)
+    # pyplot.title('Accuracy')
+    # pyplot.plot(history.history['accuracy'], label='train')
+    # pyplot.plot(history.history['val_accuracy'], label='test')
+    # pyplot.legend()
+    # pyplot.show()
+
+
 if __name__ == '__main__':
     images_list_eye, annotations_list_eye = get_model_data_eye()
-    images_list_soccer, annotations_list_soccer = get_model_data_soccer()
-    print(np.shape(images_list_eye), np.shape(annotations_list_eye))
-    print(np.shape(images_list_soccer), np.shape(annotations_list_soccer))
+    images_list_eye_no_elps = get_no_ellipse_eye()
+
+    # images_list_soccer, annotations_list_soccer = get_model_data_soccer()
+    # print(np.shape(images_list_eye), np.shape(annotations_list_eye))
+    # print(np.shape(images_list_soccer), np.shape(annotations_list_soccer))
+
+    Train_Validation_Test_Ratio = (0.7, 0.15, 0.15)
+    trainClassifier("ModelName", images_list_eye, annotations_list_eye, images_list_eye_no_elps,
+                    Train_Validation_Test_Ratio)

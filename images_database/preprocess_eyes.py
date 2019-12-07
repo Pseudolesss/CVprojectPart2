@@ -106,6 +106,12 @@ def eyePartialPreprocessing(file, destinationFolder):
             else:
                 img_th[i, j] = 0
 
+    # Closing morphing operation to fullfil captured iris
+    elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))  # opening op kernel size 5
+    img_mask = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, elem)
+
+    img_th = cv2.bitwise_and(img_th, img_th, mask=img_mask)
+
     cv2.imwrite(os.path.join(destinationFolder, imageName), img_th)
 
 
