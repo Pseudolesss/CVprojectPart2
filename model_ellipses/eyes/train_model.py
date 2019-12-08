@@ -10,6 +10,7 @@ from keras_preprocessing.image import ImageDataGenerator
 from .get_model_data import get_model_data_eye_ellipse, \
     get_model_data_eye_no_ellipse
 from models import create_model_classification_eye
+from sklearn.model_selection import train_test_split
 
 
 # Will move percentage of the images from a folder to another
@@ -38,39 +39,16 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye,
     # preparing input values (uint8 images) and output values (boolean)
     # We will call an algorithm splitting the Dataset into Training, Validation and Test sets
 
-    # random.shuffle(images_list_eye)
-    # random.shuffle(images_list_eye_no_elps)
-    #
-    # # Set test set
-    # X_test = images_list_eye[:(int(len(images_list_eye) * 0.2))]
-    # Y_test = (int(len(images_list_eye) * 0.2) ) * [True]
-    # X_test.extend(images_list_eye_no_elps[:(int(len(images_list_eye_no_elps) * 0.2) )])
-    # Y_test.extend((int(len(images_list_eye_no_elps) * 0.2) ) * [False])
-    #
-    # TEST = []
-    #
-    # for i in range(len(X_test)):
-    #     TEST.append([X_test[i], Y_test[i]])
-    #
-    # random.shuffle(TEST)
-    #
-    # images_list_eye = images_list_eye[(int(len(images_list_eye) * 0.2) ):]
-    # images_list_eye_no_elps = images_list_eye_no_elps[(int(len(images_list_eye_no_elps) * 0.2)):]
-    #
-    # # Set training/validation set
-    # X = images_list_eye
-    # Y = len(images_list_eye) * [True]
-    # X.extend(images_list_eye_no_elps)
-    # Y.extend(len(images_list_eye_no_elps) * [False])
-    #
-    # DATA = []
-    #
-    # for i in range(len(X)):
-    #     DATA.append([X[i], Y[i]])
-    #
-    # random.shuffle(DATA)
-    #
-    # chunks = [DATA[x:x + 100] for x in range(0, len(DATA), 100)]
+    # more simple version :
+    # X = images_list_eye.extend(images_list_eye_no_elps)
+    # y = ((int(len(images_list_eye))) * [True]).extend(
+    #     (int(len(images_list_eye_no_elps))) * [False])
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,
+    #                                                     random_state=42)
+    # model = create_model_classification_eye(modelName, img_height, img_width)
+    # model_history = model.fit(X_train, y_train,
+    #                           validation_split=0.2, epochs=nb_epochs,
+    #                           batch_size=batch_size)
 
     model = create_model_classification_eye(modelName, img_height, img_width)
 
@@ -117,8 +95,6 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye,
         target_size=(img_height, img_width),
         batch_size=batch_size,
         class_mode='binary', )
-
-    # model_history = model.fit([x[0] for x in DATA], [y[1] for y in DATA], validation_split=0.2, epochs=nb_epochs, batch_size=batch_size)
 
     loss = model_history.history['loss']
     val_loss = model_history.history['val_loss']
