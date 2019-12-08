@@ -1,9 +1,12 @@
+import random
+
 import cv2
 import csv
 import os
 import math
 import numpy as np
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 database_directory = os.path.join(os.getcwd(), '../../images_database')
 annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
@@ -110,7 +113,7 @@ def get_model_data_eye():
 def get_no_ellipse_eye():
     image_names = []
     images_list = []
-    result = list(Path("../../images_database/eyes/noEllipses/").glob('*noelps_eye*'))
+    result = list(Path("../../images_database/eyes/noEllipses/partial/").glob('noelps_eye*'))
 
     for file in result:  # fileName
         images_list.append(
@@ -147,13 +150,29 @@ def get_model_data_soccer():
 
     return images_list, annotations_list
 
+import shutil
+
+# Will move percentage of the images from a folder to another
+# It will be used to create our Test Set for classification
+def move_percentage_of_images(sourceFolder, destinationFolder, percentage):
+    result = list(Path(sourceFolder).glob('*.png'))
+
+    random.shuffle(result)
+
+    for i in range(int(len(result) * percentage)):  # fileName
+        shutil.move(str(result[i].resolve()), destinationFolder)
+
+
+
+
 
 import tensorflow as tf
 from keras.models import Sequential, model_from_json
 from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout, Reshape
 from keras.losses import binary_crossentropy
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adadelta
 from keras_preprocessing.image import ImageDataGenerator
+
 
 def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_list_eye_no_elps, TVT_Ratio):
     # open session to use GPU for training model
@@ -164,27 +183,57 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
     # Eye images dims
     (img_height, img_width) = (240, 320)
 
-    batch_size = 100
-    nb_epochs = 30
+    batch_size = 50
+    nb_epochs = 10
 
-    train_data_dir = "../../images_database/Model_EYES/classifier/"  # relative
+    train_data_dir = "../../images_database/Model_EYES/classifier/TrainingValidation/"  # relative
+    test_data_dir = "../../images_database/Model_EYES/classifier/Test/"  # relative
 
     # preparing input values (uint8 images) and output values (boolean)
     # We will call an algorithm splitting the Dataset into Training, Validation and Test sets
-    X = images_list_eye.extend(images_list_eye_no_elps)
-    Y = len(images_list_eye) * [True]
-    Y.extend(len(images_list_eye_no_elps) * [False])
 
-
+    # random.shuffle(images_list_eye)
+    # random.shuffle(images_list_eye_no_elps)
+    #
+    # # Set test set
+    # X_test = images_list_eye[:(int(len(images_list_eye) * 0.2))]
+    # Y_test = (int(len(images_list_eye) * 0.2) ) * [True]
+    # X_test.extend(images_list_eye_no_elps[:(int(len(images_list_eye_no_elps) * 0.2) )])
+    # Y_test.extend((int(len(images_list_eye_no_elps) * 0.2) ) * [False])
+    #
+    # TEST = []
+    #
+    # for i in range(len(X_test)):
+    #     TEST.append([X_test[i], Y_test[i]])
+    #
+    # random.shuffle(TEST)
+    #
+    # images_list_eye = images_list_eye[(int(len(images_list_eye) * 0.2) ):]
+    # images_list_eye_no_elps = images_list_eye_no_elps[(int(len(images_list_eye_no_elps) * 0.2)):]
+    #
+    # # Set training/validation set
+    # X = images_list_eye
+    # Y = len(images_list_eye) * [True]
+    # X.extend(images_list_eye_no_elps)
+    # Y.extend(len(images_list_eye_no_elps) * [False])
+    #
+    # DATA = []
+    #
+    # for i in range(len(X)):
+    #     DATA.append([X[i], Y[i]])
+    #
+    # random.shuffle(DATA)
+    #
+    # chunks = [DATA[x:x + 100] for x in range(0, len(DATA), 100)]
 
     # Start creating the model
     model = Sequential(name=modelName)
 
     # resize input image
-    #TODO CHECK INPUT REAL SIZE OF IMAGES GENERATED get dims (100, 240, 320, 3) 100=>? 3=>? (samples, height, width, channels) if dataFormat by default
+    # TODO CHECK INPUT REAL SIZE OF IMAGES GENERATED get dims (100, 240, 320, 3) 100=>? 3=>? (samples, height, width, channels) if dataFormat by default
 
+    # input_shape = (img_height, img_width, 1)
     input_shape = (img_height, img_width, 1)
-    # input_shape = (img_height, img_width)
 
     # nb_filter, kernel sizes, input shape of the model
     model.add(Conv2D(32, (3, 3), activation="relu", input_shape=input_shape))
@@ -194,6 +243,9 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
 
     model.add(Conv2D(64, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
+
+    # Dropout to reduce overfitting
+    model.add(Dropout(0.3))  # Drop 30 % of inputs
 
     model.add(Conv2D(128, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
@@ -207,18 +259,17 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
 
     # optimizer
     # learning rate, momentum to pass over local extrema
-    opt = SGD(lr=0.01, momentum=0.9)
+    # opt = SGD(lr=0.01, momentum=0.9)
+    opt = Adadelta()
 
     # compile model
     model.compile(loss="binary_crossentropy", optimizer=opt, metrics=['accuracy'])
 
+    model.summary()
 
+    # TODO uses keras capability to augment dataset through image generator
 
-
-    #TODO uses keras capability to augment dataset through image generator
-
-
-    #TODO take into account TVT ratio
+    # TODO take into account TVT ratio
     train_datagen = ImageDataGenerator(rescale=0,
                                        shear_range=0,  # cisaillement
                                        zoom_range=0., #0.1
@@ -244,7 +295,7 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
         class_mode='binary',
         subset='validation')  # set as validation data
 
-    model.fit_generator(
+    model_history = model.fit_generator(
         train_generator,
         steps_per_epoch=train_generator.samples // batch_size,
         validation_data=validation_generator,
@@ -252,26 +303,48 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
         epochs=nb_epochs)
 
     test_generator = train_datagen.flow_from_directory(
-        train_data_dir,  # same directory as training data
+        test_data_dir,  # same directory as training data
         color_mode="grayscale",
         target_size=(img_height, img_width),
         batch_size=batch_size,
         class_mode='binary',)
 
-    # model.fit(X, Y, validation_split=0.15, epochs=nb_epochs)
+    # model_history = model.fit([x[0] for x in DATA], [y[1] for y in DATA], validation_split=0.2, epochs=nb_epochs, batch_size=batch_size)
+
+    loss = model_history.history['loss']
+    val_loss = model_history.history['val_loss']
+    epochs = range(1, len(loss) + 1)
+    plt.plot(epochs, loss, 'y', label='Training loss')
+    plt.plot(epochs, val_loss, 'r', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
+
+    acc = model_history.history['acc']
+    val_acc = model_history.history['val_acc']
+    plt.plot(epochs, acc, 'y', label='Training acc')
+    plt.plot(epochs, val_acc, 'r', label='Validation acc')
+    plt.title('Training and validation accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
 
     # # evaluate the model
-    # scores = model.evaluate_generator(test_generator, steps=test_generator.n)
-    # print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
+    scores = model.evaluate_generator(test_generator, steps=test_generator.n)
+    for i in range(len(model.metrics_names)):
+        print("%s: %.2f%%" % (model.metrics_names[i], scores[i] * 100))
 
     # Save model to json and Weights to H5 files
 
     # serialize model to JSON
     model_json = model.to_json()
-    with open("./model.json", "w") as json_file:
+    with open("./model" + str(nb_epochs) + ".json", "w") as json_file:
         json_file.write(model_json)
     # serialize weights to HDF5
-    model.save_weights("./model.h5")
+    model.save_weights("./model" + str(nb_epochs) + ".h5")
     print("Saved model to disk")
 
     # # fit model
@@ -296,6 +369,13 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
 
 
 if __name__ == '__main__':
+
+    # TODO these next call are to be used for having folders for test set generator
+    # move_percentage_of_images("/home/pseudoless/Workspace/CVprojectPart2/images_database/Model_EYES/classifier/TrainingValidation/ellipse", "/home/pseudoless/Workspace/CVprojectPart2/images_database/Model_EYES/classifier/Test/ellipse", 0.2)
+    # move_percentage_of_images(
+    #     "/home/pseudoless/Workspace/CVprojectPart2/images_database/Model_EYES/classifier/TrainingValidation/noEllipse",
+    #     "/home/pseudoless/Workspace/CVprojectPart2/images_database/Model_EYES/classifier/Test/noEllipse", 0.2)
+
     images_list_eye, annotations_list_eye = get_model_data_eye()
     images_list_eye_no_elps = get_no_ellipse_eye()
 
@@ -306,3 +386,5 @@ if __name__ == '__main__':
     Train_Validation_Test_Ratio = (0.7, 0.15, 0.15)
     trainClassifier("ModelName", images_list_eye, annotations_list_eye, images_list_eye_no_elps,
                     Train_Validation_Test_Ratio)
+
+
