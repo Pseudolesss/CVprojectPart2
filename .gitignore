@@ -206,3 +206,7 @@ dmypy.json
 myimages/
 
 .ipynb_checkpoints/
+
+*.h5
+
+*.json

@@ -1,4 +1,5 @@
 import random
+import shutil
 
 import cv2
 import csv
@@ -7,6 +8,14 @@ import math
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+
+import tensorflow as tf
+from keras.models import Sequential, model_from_json
+from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout, Reshape
+from keras.losses import binary_crossentropy
+from keras.optimizers import SGD, Adadelta
+from keras_preprocessing.image import ImageDataGenerator
+
 
 database_directory = os.path.join(os.getcwd(), '../../images_database')
 annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
@@ -42,7 +51,8 @@ def extract_annotations_eye():
             size = (int(ellipse[1][0] / 2), int(ellipse[1][1] / 2))
             angle = int(ellipse[2])
 
-            images_annotations[image_name] = [center[0], center[1], angle, size[0], size[1]]
+            images_annotations[image_name] = [center[0], center[1], angle,
+                                              size[0], size[1]]
 
         return images_annotations
 
@@ -82,7 +92,9 @@ def extract_annotations_soccer():
 
             if image_name in images_annotations:
                 images_annotations[image_name] = images_annotations[
-                                                     image_name] + [[min_x, min_y, max_x, max_y]]
+                                                     image_name] + [
+                                                     [min_x, min_y, max_x,
+                                                      max_y]]
             else:
                 images_annotations[image_name] = [[min_x, min_y, max_x, max_y]]
 
@@ -113,7 +125,8 @@ def get_model_data_eye():
 def get_no_ellipse_eye():
     image_names = []
     images_list = []
-    result = list(Path("../../images_database/eyes/noEllipses/partial/").glob('noelps_eye*'))
+    result = list(Path("../../images_database/eyes/noEllipses/partial/").glob(
+        'noelps_eye*'))
 
     for file in result:  # fileName
         images_list.append(
@@ -125,7 +138,8 @@ def get_no_ellipse_eye():
 def get_model_data_soccer():
     image_names = []
     images_list = []
-    result = list(Path("../../images_database/soccer/preprocessed1/").glob('elps*'))
+    result = list(
+        Path("../../images_database/soccer/preprocessed1/").glob('elps*'))
     for file in result:  # fileName
         images_list.append(
             cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
@@ -140,7 +154,8 @@ def get_model_data_soccer():
             max_size = 0
             biggest_annotation = []
             for annotation in image_annotations[image_name]:
-                size = (annotation[2] - annotation[0]) * (annotation[3] - annotation[1])
+                size = (annotation[2] - annotation[0]) * (
+                            annotation[3] - annotation[1])
                 if size > max_size:
                     max_size = size
                     biggest_annotation = annotation
@@ -149,8 +164,6 @@ def get_model_data_soccer():
             annotations_list.append([])
 
     return images_list, annotations_list
-
-import shutil
 
 # Will move percentage of the images from a folder to another
 # It will be used to create our Test Set for classification
@@ -163,18 +176,8 @@ def move_percentage_of_images(sourceFolder, destinationFolder, percentage):
         shutil.move(str(result[i].resolve()), destinationFolder)
 
 
-
-
-
-import tensorflow as tf
-from keras.models import Sequential, model_from_json
-from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout, Reshape
-from keras.losses import binary_crossentropy
-from keras.optimizers import SGD, Adadelta
-from keras_preprocessing.image import ImageDataGenerator
-
-
-def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_list_eye_no_elps, TVT_Ratio):
+def trainClassifier(modelName, images_list_eye, annotations_list_eye,
+                    images_list_eye_no_elps, TVT_Ratio, nb_epochs):
     # open session to use GPU for training model
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
@@ -184,7 +187,6 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
     (img_height, img_width) = (240, 320)
 
     batch_size = 50
-    nb_epochs = 10
 
     train_data_dir = "../../images_database/Model_EYES/classifier/TrainingValidation/"  # relative
     test_data_dir = "../../images_database/Model_EYES/classifier/Test/"  # relative
@@ -263,7 +265,8 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
     opt = Adadelta()
 
     # compile model
-    model.compile(loss="binary_crossentropy", optimizer=opt, metrics=['accuracy'])
+    model.compile(loss="binary_crossentropy", optimizer=opt,
+                  metrics=['accuracy'])
 
     model.summary()
 
@@ -272,10 +275,12 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
     # TODO take into account TVT ratio
     train_datagen = ImageDataGenerator(rescale=0,
                                        shear_range=0,  # cisaillement
-                                       zoom_range=0., #0.1
-                                       width_shift_range=0., #0.1  # percentage or pixel number
-                                       height_shift_range=0., #0.1  # percentage or pixel number
-                                       horizontal_flip=False, # True
+                                       zoom_range=0.,  # 0.1
+                                       width_shift_range=0.,
+                                       # 0.1  # percentage or pixel number
+                                       height_shift_range=0.,
+                                       # 0.1  # percentage or pixel number
+                                       horizontal_flip=False,  # True
                                        dtype='uint8',
                                        validation_split=0.2)  # set validation split
 
@@ -307,7 +312,7 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
         color_mode="grayscale",
         target_size=(img_height, img_width),
         batch_size=batch_size,
-        class_mode='binary',)
+        class_mode='binary', )
 
     # model_history = model.fit([x[0] for x in DATA], [y[1] for y in DATA], validation_split=0.2, epochs=nb_epochs, batch_size=batch_size)
 
@@ -369,7 +374,6 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye, images_lis
 
 
 if __name__ == '__main__':
-
     # TODO these next call are to be used for having folders for test set generator
     # move_percentage_of_images("/home/pseudoless/Workspace/CVprojectPart2/images_database/Model_EYES/classifier/TrainingValidation/ellipse", "/home/pseudoless/Workspace/CVprojectPart2/images_database/Model_EYES/classifier/Test/ellipse", 0.2)
     # move_percentage_of_images(
@@ -379,12 +383,29 @@ if __name__ == '__main__':
     images_list_eye, annotations_list_eye = get_model_data_eye()
     images_list_eye_no_elps = get_no_ellipse_eye()
 
+    print(np.shape(images_list_eye))
+
     # images_list_soccer, annotations_list_soccer = get_model_data_soccer()
     # print(np.shape(images_list_eye), np.shape(annotations_list_eye))
     # print(np.shape(images_list_soccer), np.shape(annotations_list_soccer))
-
+    nb_epochs = 10
     Train_Validation_Test_Ratio = (0.7, 0.15, 0.15)
-    trainClassifier("ModelName", images_list_eye, annotations_list_eye, images_list_eye_no_elps,
-                    Train_Validation_Test_Ratio)
+    # trainClassifier("ModelName", images_list_eye, annotations_list_eye, images_list_eye_no_elps,
+    #                 Train_Validation_Test_Ratio, nb_epochs)
 
+    # load json and create model
+    json_file = open('./model' + str(nb_epochs) + ".json", 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    loaded_model = model_from_json(loaded_model_json)
+    # load weights into new model
+    loaded_model.load_weights("model" + str(nb_epochs) + ".h5")
+    print("Loaded model from disk")
 
+    # test loaded model on an example
+    loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta',
+                         metrics=['accuracy'])
+    example_image = cv2.imread(
+        "../../images_database/eyes/partial/elps_eye01_2014-11-26_08-49-31-060.png",
+        cv2.IMREAD_GRAYSCALE)
+    print(loaded_model.predict(np.reshape(example_image, [1, 240, 320, 1])))
