@@ -120,5 +120,5 @@ if __name__ == '__main__':
                          "Team*/elps_eye*")  # Call eyes png files from database only
     applyPreprocessingDB(".", "./eyes/partial", eyePartialPreprocessing,
                          "Team*/elps_eye*")  # Call eyes png files from database only
-    applyPreprocessingDB(".", "./eyes/noEllipses", eyePartialPreprocessing,
-                         "NoEllipses/elps_eye*")
+    applyPreprocessingDB(".", "./eyes/noEllipses/partial", eyePartialPreprocessing,
+                         "NoEllipses/noelps_eye*")

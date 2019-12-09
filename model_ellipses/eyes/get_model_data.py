@@ -48,20 +48,20 @@ def get_model_data_eye_ellipse():
     images_list = []
     result = list(Path("../../images_database/eyes/partial/").glob('*.png'))
     for file in result:  # fileName
-        images_list.append(
-            cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
+        image = cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE)
+        images_list.append(image)
         image_names.append(file.name)
 
-    image_annotations = extract_annotations_eye()
+    annotations_dict = extract_annotations_eye()
 
     annotations_list = []
     for image_name in image_names:
-        if image_name in image_annotations:
-            annotations_list.append(image_annotations[image_name])
+        if image_name in annotations_dict:
+            annotations_list.append(annotations_dict[image_name])
         else:
             annotations_list.append([])
 
-    return images_list, annotations_list
+    return images_list, annotations_list, annotations_dict
 
 
 def get_model_data_eye_no_ellipse():

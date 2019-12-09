@@ -1,3 +1,5 @@
+# conda install pillow
+
 import random
 import shutil
 import cv2
@@ -7,8 +9,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from keras.models import model_from_json
 from keras_preprocessing.image import ImageDataGenerator
-from .get_model_data import get_model_data_eye_ellipse, \
-    get_model_data_eye_no_ellipse
+from model_ellipses.eyes.get_model_data import get_model_data_eye_ellipse, get_model_data_eye_no_ellipse
 from models import create_model_classification_eye
 from sklearn.model_selection import train_test_split
 
@@ -23,12 +24,11 @@ def move_percentage_of_images(sourceFolder, destinationFolder, percentage):
         shutil.move(str(result[i].resolve()), destinationFolder)
 
 
-def trainClassifier(modelName, images_list_eye, annotations_list_eye,
-                    images_list_eye_no_elps, TVT_Ratio, nb_epochs, batch_size):
+def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epochs, batch_size):
     # open session to use GPU for training model
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    tf.keras.backend.set_session(tf.Session(config=config))
+    # config = tf.ConfigProto()
+    # config.gpu_options.allow_growth = True
+    # tf.keras.backend.set_session(tf.Session(config=config))
 
     # Eye images dims
     (img_height, img_width) = (240, 320)
@@ -36,21 +36,21 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye,
     train_data_dir = "../../images_database/Model_EYES/classifier/TrainingValidation/"  # relative
     test_data_dir = "../../images_database/Model_EYES/classifier/Test/"  # relative
 
+    model = create_model_classification_eye(modelName, img_height, img_width)
+
     # preparing input values (uint8 images) and output values (boolean)
     # We will call an algorithm splitting the Dataset into Training, Validation and Test sets
 
-    # more simple version :
-    # X = images_list_eye.extend(images_list_eye_no_elps)
-    # y = ((int(len(images_list_eye))) * [True]).extend(
-    #     (int(len(images_list_eye_no_elps))) * [False])
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,
-    #                                                     random_state=42)
-    # model = create_model_classification_eye(modelName, img_height, img_width)
-    # model_history = model.fit(X_train, y_train,
-    #                           validation_split=0.2, epochs=nb_epochs,
+    # X = images_list_eye + images_list_eye_no_elps
+    # y = len(images_list_eye) * [True] + len(images_list_eye_no_elps) * [False]
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # X_train = np.expand_dims(X_train, axis=3)
+    # X_test = np.expand_dims(X_test, axis=3)
+    # y_train = np.array(y_train)
+    # y_test = np.array(y_test)
+    #
+    # model_history = model.fit(X_train, y_train, validation_split=0.2, epochs=nb_epochs,
     #                           batch_size=batch_size)
-
-    model = create_model_classification_eye(modelName, img_height, img_width)
 
     # TODO uses keras capability to augment dataset through image generator
 
@@ -96,29 +96,32 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye,
         batch_size=batch_size,
         class_mode='binary', )
 
-    loss = model_history.history['loss']
-    val_loss = model_history.history['val_loss']
-    epochs = range(1, len(loss) + 1)
-    plt.plot(epochs, loss, 'y', label='Training loss')
-    plt.plot(epochs, val_loss, 'r', label='Validation loss')
-    plt.title('Training and validation loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
-
-    acc = model_history.history['acc']
-    val_acc = model_history.history['val_acc']
-    plt.plot(epochs, acc, 'y', label='Training acc')
-    plt.plot(epochs, val_acc, 'r', label='Validation acc')
-    plt.title('Training and validation accuracy')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend()
-    plt.show()
+    # loss = model_history.history['loss']
+    # val_loss = model_history.history['val_loss']
+    # epochs = range(1, len(loss) + 1)
+    # plt.plot(epochs, loss, 'y', label='Training loss')
+    # plt.plot(epochs, val_loss, 'r', label='Validation loss')
+    # plt.title('Training and validation loss')
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Loss')
+    # plt.legend()
+    # plt.show()
+    #
+    # acc = model_history.history['acc']
+    # val_acc = model_history.history['val_acc']
+    # plt.plot(epochs, acc, 'y', label='Training acc')
+    # plt.plot(epochs, val_acc, 'r', label='Validation acc')
+    # plt.title('Training and validation accuracy')
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Accuracy')
+    # plt.legend()
+    # plt.show()
 
     # # evaluate the model
+
+    # scores = model.evaluate(X_test, y_test, batch_size=batch_size)
     scores = model.evaluate_generator(test_generator, steps=test_generator.n)
+
     for i in range(len(model.metrics_names)):
         print("%s: %.2f%%" % (model.metrics_names[i], scores[i] * 100))
 
@@ -126,10 +129,10 @@ def trainClassifier(modelName, images_list_eye, annotations_list_eye,
 
     # serialize model to JSON
     model_json = model.to_json()
-    with open("./model" + str(nb_epochs) + ".json", "w") as json_file:
+    with open("./model_class" + str(nb_epochs) + ".json", "w") as json_file:
         json_file.write(model_json)
     # serialize weights to HDF5
-    model.save_weights("./model" + str(nb_epochs) + ".h5")
+    model.save_weights("./model_class" + str(nb_epochs) + ".h5")
     print("Saved model to disk")
 
 
@@ -145,21 +148,19 @@ if __name__ == '__main__':
 
     nb_epochs = 10
     batch_size = 50
-    Train_Validation_Test_Ratio = (0.7, 0.15, 0.15)
-    # trainClassifier("ModelName", images_list_eye, annotations_list_eye, images_list_eye_no_elps,
-    #                 Train_Validation_Test_Ratio, nb_epochs, batch_size)
+    trainClassifier("ModelName", images_list_eye, images_list_eye_no_elps, nb_epochs, batch_size)
 
-    # load json and create model
-    with open("./model" + str(nb_epochs) + ".json", "r") as json_file:
-        loaded_model_json = json_file.read()
-    loaded_model = model_from_json(loaded_model_json)
-    # load weights into new model
-    loaded_model.load_weights("model" + str(nb_epochs) + ".h5")
-
-    # test loaded model on an example
-    loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta',
-                         metrics=['accuracy'])
-    example_image = cv2.imread(
-        "../../images_database/eyes/partial/elps_eye01_2014-11-26_08-49-31-060.png",
-        cv2.IMREAD_GRAYSCALE)
-    print(loaded_model.predict(np.reshape(example_image, [1, 240, 320, 1])))
+    # # load json and create model
+    # with open("./modelclass" + str(nb_epochs) + ".json", "r") as json_file:
+    #     loaded_model_json = json_file.read()
+    # loaded_model = model_from_json(loaded_model_json)
+    # # load weights into new model
+    # loaded_model.load_weights("model" + str(nb_epochs) + ".h5")
+    #
+    # # test loaded model on an example
+    # loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta',
+    #                      metrics=['accuracy'])
+    # example_image = cv2.imread(
+    #     "../../images_database/eyes/partial/elps_eye01_2014-11-26_08-49-31-060.png",
+    #     cv2.IMREAD_GRAYSCALE)
+    # print(loaded_model.predict(np.reshape(example_image, [1, 240, 320, 1])))

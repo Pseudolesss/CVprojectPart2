@@ -65,15 +65,15 @@ def get_model_data_soccer():
             cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
         image_names.append(file.name)
 
-    image_annotations = extract_annotations_soccer()
+    annotations_dict = extract_annotations_soccer()
 
     annotations_list = []
     for image_name in image_names:
-        if image_name in image_annotations:
+        if image_name in annotations_dict:
             # select only the biggest annotation
             max_size = 0
             biggest_annotation = []
-            for annotation in image_annotations[image_name]:
+            for annotation in annotations_dict[image_name]:
                 size = (annotation[2] - annotation[0]) * (
                             annotation[3] - annotation[1])
                 if size > max_size:
@@ -83,4 +83,4 @@ def get_model_data_soccer():
         else:
             annotations_list.append([])
 
-    return images_list, annotations_list
+    return images_list, annotations_list, annotations_dict
