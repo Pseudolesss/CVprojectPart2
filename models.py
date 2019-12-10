@@ -3,13 +3,23 @@ from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout
 from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
 from metrics import dist
 
+# With the normalized version of the custom loss :
+# classic : 412, improved ( angle 1/10 and last dense 256) : 308
 
 def define_custom_loss(weight=None):
     if weight is None:
-        weight = [1 / 2, 1 / 2, 1 / 5, 1 / 3, 1 / 3]
+        weight = [1 / 2, 1 / 2, 1 / 10, 1 / 3, 1 / 3]
 
     def custom_loss(y_true, y_pred):
         return dist(y_true, y_pred, weight)
+        # loss = 0
+        # x_center_true, y_center_true, angle_true, main_size_true, sub_size_true = y_true
+        # x_center_pred, y_center_pred, angle_pred, main_size_pred, sub_size_pred = y_pred
+        # loss += (x_center_pred - x_center_true)**2 + (y_center_pred - y_center_true)**2
+        # loss += (main_size_pred - main_size_true)**2 + (sub_size_pred - sub_size_true)**2
+        # loss += (angle_pred - angle_true)**2 * abs(main_size_pred - sub_size_pred)
+        # return loss
+
     return custom_loss
 
 
@@ -85,7 +95,7 @@ def create_model_regression_eye(modelName, img_height, img_width):
     # Layers for fully connected network and connect it to boolean output
     model.add(Flatten())
 
-    model.add(Dense(512, activation="relu"))
+    model.add(Dense(256, activation="relu"))
 
     model.add(Dropout(0.4))
 

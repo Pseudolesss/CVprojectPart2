@@ -20,6 +20,7 @@ def dist(elps1, elps2, weight=[1 / 2, 1 / 2, 1 / 5, 1 / 3, 1 / 3]):
     # Use keras instead of numpy in order to avoid symbolic / non symbolic conflicts in the custom loss
     diff = k.abs(elps1 - elps2)
     diff = diff * weight
+    diff = diff / k.sum(weight)
     return k.sum(diff)
 
 
