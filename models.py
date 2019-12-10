@@ -1,6 +1,6 @@
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout
-from keras.optimizers import SGD, Adadelta
+from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
 from metrics import dist
 
 
@@ -43,13 +43,10 @@ def create_model_classification_eye(modelName, img_height, img_width):
     model.add(Dense(1, activation="sigmoid"))
 
     # optimizer
-    # learning rate, momentum to pass over local extrema
-    # opt = SGD(lr=0.01, momentum=0.9)
     opt = Adadelta()
 
     # compile model
-    loss = define_custom_loss()
-    model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
+    model.compile(loss="binary_crossentropy", optimizer=opt, metrics=['accuracy'])
 
     model.summary()
 
@@ -73,26 +70,43 @@ def create_model_regression_eye(modelName, img_height, img_width):
     model.add(MaxPool2D(pool_size=(2, 2)))
 
     # Dropout to reduce overfitting
-    model.add(Dropout(0.3))  # Drop 30 % of inputs
+    model.add(Dropout(0.5))  # Drop 30 % of inputs
 
     model.add(Conv2D(128, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
 
+    model.add(Dropout(0.5))
+
     model.add(Conv2D(256, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
 
+    model.add(Dropout(0.5))
+
     # Layers for fully connected network and connect it to boolean output
     model.add(Flatten())
+
+    model.add(Dense(512, activation="relu"))
+
+    model.add(Dropout(0.5))
+
     model.add(Dense(5, activation="linear"))
 
     # optimizer
-    # learning rate, momentum to pass over local extrema
-    # opt = SGD(lr=0.01, momentum=0.9)
+    """
+    Comparison with all other parameters same (10 epochs, first version custom loss, first version model) :
+    Adadelta = 1241
+    RMSprop = 1750
+    Adam = 1211
+    Adagrad = 1023
+    """
     opt = Adadelta()
+    # opt = RMSprop(learning_rate=0.0001, decay=1e-6)
+    # opt = Adam()
+    # opt = Adagrad()
 
     # compile model
-    model.compile(loss="mean_squared_error", optimizer=opt,
-                  metrics=['accuracy'])
+    loss = define_custom_loss()
+    model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
 
     model.summary()
 

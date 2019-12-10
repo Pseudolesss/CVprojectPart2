@@ -60,7 +60,10 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
     # # evaluate the model
     scores = model.evaluate(X_test, y_test)
     for i in range(len(model.metrics_names)):
-        print("%s: %.2f%%" % (model.metrics_names[i], scores[i] * 100))
+        if model.metrics_names[i] == "loss":
+            print("%s: %.2f" % (model.metrics_names[i], scores[i]))
+        else:
+            print("%s: %.2f%%" % (model.metrics_names[i], scores[i] * 100))
 
     # Save model to json and Weights to H5 files
 
@@ -76,7 +79,7 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
 if __name__ == '__main__':
     images_list_eye, annotations_list_eye, annotations_dict = get_model_data_eye_ellipse()
 
-    nb_epochs = 20
+    nb_epochs = 30
     batch_size = 50
     trainRegressor("ModelName", images_list_eye, annotations_list_eye, nb_epochs, batch_size)
 
@@ -93,11 +96,10 @@ if __name__ == '__main__':
     test_image_name = "elps_eye01_2014-11-26_08-50-45-008.png"
     test_image = cv2.imread( "../../images_database/eyes/partial/" + test_image_name, cv2.IMREAD_GRAYSCALE)
     result = loaded_model.predict(np.reshape(test_image, [1, 240, 320, 1]))
-    # cv2.imshow('Ellipse', np.ones([240, 320, 3]))
 
-    # center = (int(round(result[0][0])), int(round(result[0][1])))
-    # size = (int(round(result[0][2])), int(round(result[0][3])))
-    # angle = int(round(result[0][4]))
+    center = (int(round(result[0][0])), int(round(result[0][1])))
+    size = (int(round(result[0][2])), int(round(result[0][3])))
+    angle = int(round(result[0][4]))
     print("obtained ellipse", result)
 
     correct = annotations_dict[test_image_name]
@@ -106,7 +108,10 @@ if __name__ == '__main__':
     angle = int(round(correct[4]))
     print("correct ellipse", correct)
 
-    # cv2.ellipse(test_image, center, size, angle, 0, 360, (0, 255, 255), 10)
+    # color_test_image = cv2.imread("../../images_database/Team01/" + test_image_name, cv2.IMREAD_COLOR)
+    # cv2.imshow('Ellipse', color_test_image)
+    # cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 0, 255), 1)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+
 
