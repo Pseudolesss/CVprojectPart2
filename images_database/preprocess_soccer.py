@@ -30,14 +30,32 @@ def boundTo255(img):
 def getLargestConnectedComponent(image):
     image = image.astype('uint8')
     nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(image, connectivity=4)
-    sizes = stats[:, -1]
+    sizes = stats[:, cv2.CC_STAT_AREA]
 
-    max_label = 0
-    max_size = sizes[0]
+    if nb_components == 0:
+        return image
+
+    # First check if first element is not a black connected component
+
+    itemindex = np.where(output == 0)
+    (x, y) = (itemindex[0][0], itemindex[1][0])
+
+    if image[x][y] != 0:
+        max_label = 0
+        max_size = sizes[0]
+    else:
+        max_label = 1
+        max_size = sizes[1]
+
     for i in range(1, nb_components):
         if sizes[i] > max_size:
-            max_label = i
-            max_size = sizes[i]
+
+            itemindex = np.where(output == i)
+            (x, y) = (itemindex[0][0], itemindex[1][0])
+
+            if image[x][y] != 0:  # Have to check if biggest connected component is not black
+                max_label = i
+                max_size = sizes[i]
 
     img2 = np.zeros(output.shape)
     img2[output == max_label] = 255
@@ -96,7 +114,7 @@ if __name__ == '__main__':
 
     sourceFolder = "."
     regexNameFile = "Team*/*soccer*"  # All soccer png files
-    destinationFolder = "./soccer/preprocessed1"
+    destinationFolder = "./soccer/newLabSoustraction"
 
     result = list(Path(sourceFolder).rglob(regexNameFile))
 
@@ -105,8 +123,35 @@ if __name__ == '__main__':
 
         imgTest = cv2.imread(str(file.resolve()), cv2.IMREAD_COLOR)
 
-        # HSV mask to get mainly the field
-        hsv = mask.cut_hsv(imgTest, h_min=30, h_max=55, s_min=0, s_max=255, v_min=0, v_max=255)
+        # if imageName != "elps_soccer01_2153.png":
+        #     continue
+
+
+
+        # HSV mask applied to get mainly the field
+        # The return value is an RGB image
+        blur = cv2.blur(imgTest, (5, 5))
+        hsv = mask.cut_hsv(blur, h_min=30, h_max=70, s_min=0, s_max=255, v_min=0, v_max=255)
+
+        # result converted to greyscale to get an activation mask
+        hsv_bw = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
+
+        # Binary threshold [0][1,255]
+        activation = 255 * (hsv_bw > 0).astype('uint8')
+
+        # First apply dilatation because in some picture, brown border (dropped by hsv mask) around white lines
+        # Horizontal kernel because it involves the vertical line in the middle of the field
+        elem = cv2.getStructuringElement(cv2.MORPH_RECT, (6, 1))
+        activation = cv2.morphologyEx(activation, cv2.MORPH_DILATE, elem)
+
+        # HSV sends us back the green field part
+        # All other 4-way connected component are noises
+        activation = getLargestConnectedComponent(activation)
+        activation = activation / 255  # np array of 0 or 1
+
+        # Proceed to dilation to recover lost element
+        elem = cv2.getStructuringElement(cv2.MORPH_RECT, (22, 22))
+        activation = cv2.morphologyEx(activation, cv2.MORPH_DILATE, elem)
 
         # Isolate white line through median blur on luminance
         # We proceed to OriginalImage - FilteredImage.
@@ -114,15 +159,7 @@ if __name__ == '__main__':
 
         # LAB space L = Grey level
         medianFiltering = cv2.cvtColor(imgTest, cv2.COLOR_BGR2LAB)
-        backgroundLuminance = cv2.medianBlur(medianFiltering[:, :, 0], 25) # median filtering on brightness component
-
-        hsv_bw = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
-
-        # Binary threshold [0][1,255]
-        activation = 255 * (hsv_bw > 0).astype('uint8')
-
-        activation = getLargestConnectedComponent(activation)
-        activation = activation / 255  # np array of 0 or 1
+        backgroundLuminance = cv2.medianBlur(medianFiltering[:, :, 0], 25)  # median filtering on brightness component
 
         line = hsv_bw * activation - backgroundLuminance
 

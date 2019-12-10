@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-
-def cut_hsv(img, h_min=0, h_max=255, s_min=0, s_max=255, v_min=0, v_max=255):
+# The h value is expressed in degrees and goes from 0->360° (representation divided by two to fit in 8 bits)
+def cut_hsv(img, h_min=0, h_max=179, s_min=0, s_max=255, v_min=0, v_max=255):
     """
     Filters the image. Keeps only hsv values that are between two thresholds.
 
@@ -24,11 +24,11 @@ def cut_hsv(img, h_min=0, h_max=255, s_min=0, s_max=255, v_min=0, v_max=255):
     # Applying hsv mask
     mask = cv2.inRange(hsv, low, upp)
 
-    # Applying dilatation then erode to reconstitute largest component and separate it from the others
-    elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))  # erosion then dilatation of non black pixel
-    elem2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (12, 12))  # dilatation then erosion of non black pixel
-    mask = cv2.morphologyEx(mask, cv2.MORPH_DILATE, elem)  # cv2.MORPH_CLOSE
-    mask = cv2.morphologyEx(mask, cv2.MORPH_ERODE, elem2)  # cv2.MORPH_OPEN
+    # # Applying dilatation then erode to reconstitute largest component and separate it from the others
+    # elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))  # erosion then dilatation of non black pixel
+    # elem2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (12, 12))  # dilatation then erosion of non black pixel
+    # mask = cv2.morphologyEx(mask, cv2.MORPH_DILATE, elem)  # cv2.MORPH_CLOSE
+    # mask = cv2.morphologyEx(mask, cv2.MORPH_ERODE, elem2)  # cv2.MORPH_OPEN
 
 
     img_mask = cv2.bitwise_and(img, img, mask=mask)
