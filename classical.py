@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+from imgTools import display, multiDisplay
+import segment_detector as sd
 
 def ellipseDistance(ell1, ell2):
     center1 = ell1[0]
@@ -171,13 +173,15 @@ if __name__ == "__main__":
     print(len(ellipses1))
     print(len(ellipses2))
      
-    imageBGR = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    imageBGR = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)*0
     
     for ell in ellipses1:
         cv2.ellipse(imageBGR, ell[0], ell[1], ell[2], 0, 360, (0, 0, 255))
         
     for ell in ellipses2:
         cv2.ellipse(imageBGR, ell[0], ell[1], ell[2], 0, 360, (255, 0, 0))
- 
-    cv2.imshow("test", imageBGR)
-    cv2.waitKey(50000)
+ 	
+    display("", imageBinary)
+    multiDisplay(["", ""], [image, imageBGR], 2)
+    #cv2.imshow("test", imageBGR)
+    #cv2.waitKey(50000)
