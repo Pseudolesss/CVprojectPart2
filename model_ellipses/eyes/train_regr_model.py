@@ -77,7 +77,7 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
 
 
 if __name__ == '__main__':
-    images_list_eye, annotations_list_eye, annotations_dict = get_model_data_eye_ellipse()
+    images_list_eye, annotations_list_eye, annotations_dict_eye = get_model_data_eye_ellipse()
 
     nb_epochs = 30
     batch_size = 50
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     angle = int(round(result[0][4]))
     print("obtained ellipse", result)
 
-    correct = annotations_dict[test_image_name]
+    correct = annotations_dict_eye[test_image_name]
     center = (int(round(correct[0])), int(round(correct[1])))
     size = (int(round(correct[2])), int(round(correct[3])))
     angle = int(round(correct[4]))

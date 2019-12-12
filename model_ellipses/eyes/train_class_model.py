@@ -143,7 +143,7 @@ if __name__ == '__main__':
     #     "../../images_database/Model_EYES/classifier/TrainingValidation/noEllipse",
     #     "../../images_database/Model_EYES/classifier/Test/noEllipse", 0.2)
 
-    images_list_eye, annotations_list_eye = get_model_data_eye_ellipse()
+    images_list_eye, annotations_list_eye, annotations_dict_eye = get_model_data_eye_ellipse()
     images_list_eye_no_elps = get_model_data_eye_no_ellipse()
 
     nb_epochs = 10

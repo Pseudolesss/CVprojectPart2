@@ -55,7 +55,7 @@ def extract_annotations_soccer():
 
 
 
-def get_model_data_soccer():
+def get_model_data_soccer_ellipse():
     image_names = []
     images_list = []
     result = list(
@@ -84,4 +84,15 @@ def get_model_data_soccer():
             annotations_list.append([])
 
     return images_list, annotations_list, annotations_dict
+
+def get_model_data_soccer_no_ellipse():
+    images_list = []
+    result = list(Path("../../images_database/eyes/noEllipses/partial/").glob(
+        'noelps_eye*'))
+
+    for file in result:  # fileName
+        images_list.append(
+            cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
+
+    return images_list
 
