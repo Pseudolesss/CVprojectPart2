@@ -129,6 +129,9 @@ def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength
                    accumulator resolution is (maxLength - minLength) / bags.
         threshold: [int] The number of hits in an accumulator bag needed for this
                    bag to be validated as an actual ellipse parameter.
+    @Return:
+        a list of ellipses in the format 
+        [[(centerX, centerY), (mainHalfLength, secondaryHalfLength), angle)] ...]
     """
     pixels = np.random.permutation(np.argwhere(image==255))
     
