@@ -113,7 +113,28 @@ def distance(pt1, pt2):
 
 # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1.8792&rep=rep1&type=pdf
 def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength, bags, threshold):
-    pixels = np.random.permutation(np.argwhere(image==255))[:n_pixels]
+    """ 
+    Evaluates the ellipse parameters present in a binary contour image
+    by looking for plausible main axes and accumulating secondary axes.
+    
+    @Args:
+        image:     [np.array] binary contour image
+        n_pixels:  [int] The number of pixels of the contour to be randomly 
+                   taken. None to take everything.
+        minDist:   [numeric] The minimum length for the main axis
+        maxDist:   [numeric] The maximum length for the main axis
+        minLength: [numeric] The minimum length for the secondary axis
+        maxLength: [numeric] The maximum length for the secondary axis
+        bags:      [int] The number of bags used for the accumulator. The 
+                   accumulator resolution is (maxLength - minLength) / bags.
+        threshold: [int] The number of hits in an accumulator bag needed for this
+                   bag to be validated as an actual ellipse parameter.
+    """
+    pixels = np.random.permutation(np.argwhere(image==255))
+    
+    if n_pixels is not None:
+        pixels = pixels[:n_pixels]
+        
     accLength = maxLength - minLength
     
     ellipses = []
