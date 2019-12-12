@@ -10,7 +10,8 @@ from keras_preprocessing.image import ImageDataGenerator
 from model_ellipses.eyes.get_model_data import get_model_data_eye_ellipse
 from models import create_model_regression_eye
 from sklearn.model_selection import train_test_split
-
+from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
+from models import define_custom_loss
 
 def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, batch_size):
     # open session to use GPU for training model
@@ -77,7 +78,7 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
 
 
 if __name__ == '__main__':
-    images_list_eye, annotations_list_eye, annotations_dict = get_model_data_eye_ellipse()
+    images_list_eye, annotations_list_eye, annotations_dict_eye = get_model_data_eye_ellipse()
 
     nb_epochs = 30
     batch_size = 50
@@ -89,7 +90,8 @@ if __name__ == '__main__':
     loaded_model = model_from_json(loaded_model_json)
     # load weights into new model
     loaded_model.load_weights("model_regr" + str(nb_epochs) + ".h5")
-    loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+    loss = define_custom_loss()
+    loaded_model.compile(loss=loss, optimizer=Adadelta(), metrics=['accuracy'])
 
     # Test the model on an example
 
@@ -102,7 +104,7 @@ if __name__ == '__main__':
     angle = int(round(result[0][4]))
     print("obtained ellipse", result)
 
-    correct = annotations_dict[test_image_name]
+    correct = annotations_dict_eye[test_image_name]
     center = (int(round(correct[0])), int(round(correct[1])))
     size = (int(round(correct[2])), int(round(correct[3])))
     angle = int(round(correct[4]))

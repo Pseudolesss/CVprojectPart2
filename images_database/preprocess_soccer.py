@@ -5,6 +5,7 @@ from pathlib import Path
 import part1_soccer_hsv_mask as mask
 import matplotlib.pyplot as plt
 
+
 def applyPreprocessingDB(sourceFolder, destinationFolder, function, regexNameFile):
     result = list(Path(sourceFolder).rglob(regexNameFile))
 
@@ -61,6 +62,7 @@ def getLargestConnectedComponent(image):
     img2[output == max_label] = 255
     return img2
 
+
 def removeKsizeConnectedComponent(image, size, connectivity=4):
     image = image.astype('uint8')
     nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(image, connectivity=connectivity)
@@ -85,13 +87,14 @@ def applyContrast(grey_image, factor):
     # Cast int back to uint8
     return np.uint8(grey_image)
 
+
 def invert_0_255_image(image):
     image = image + 1  # roundabout overflow (0 => 1, 255 => 0)
     return image * 255
 
+
 # Interessant mais pas pour ce contexte
 def morphologicalSkeleton(img):
-
     image = np.copy(img)
     skel = np.zeros(image.shape, dtype="uint8")
 
@@ -110,6 +113,76 @@ def morphologicalSkeleton(img):
 
     return skel
 
+
+def SoccerPreprocessing(file, destinationFolder):
+    imageName = file.name
+
+    imgTest = cv2.imread(str(file.resolve()), cv2.IMREAD_COLOR)
+
+    # if imageName != "elps_soccer01_2153.png":
+    #     continue
+
+    # HSV mask applied to get mainly the field
+    # The return value is an RGB image
+    blur = cv2.blur(imgTest, (5, 5))
+    hsv = mask.cut_hsv(blur, h_min=30, h_max=70, s_min=0, s_max=255, v_min=0, v_max=255)
+
+    # result converted to greyscale to get an activation mask
+    hsv_bw = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
+
+    # Binary threshold [0][1,255]
+    activation = 255 * (hsv_bw > 0).astype('uint8')
+
+    # First apply dilatation because in some picture, brown border (dropped by hsv mask) around white lines
+    # Horizontal kernel because it involves the vertical line in the middle of the field
+    elem = cv2.getStructuringElement(cv2.MORPH_RECT, (6, 1))
+    activation = cv2.morphologyEx(activation, cv2.MORPH_DILATE, elem)
+
+    # HSV sends us back the green field part
+    # All other 4-way connected component are noises
+    activation = getLargestConnectedComponent(activation)
+    activation = activation / 255  # np array of 0 or 1
+
+    # Proceed to dilation to recover lost element
+    elem = cv2.getStructuringElement(cv2.MORPH_RECT, (22, 22))
+    activation = cv2.morphologyEx(activation, cv2.MORPH_DILATE, elem)
+
+    # Isolate white line through median blur on luminance
+    # We proceed to OriginalImage - FilteredImage.
+    # The difference should contain field lines luminances
+
+    # LAB space L = Grey level
+    medianFiltering = cv2.cvtColor(imgTest, cv2.COLOR_BGR2LAB)
+    backgroundLuminance = cv2.medianBlur(medianFiltering[:, :, 0], 25)  # median filtering on brightness component
+
+    line = hsv_bw * activation - backgroundLuminance
+
+    # Binary threshold [0][1,255]
+    line[line < 0] = 0
+    line[line > 0] = 255
+    line[:, 0] = 0  # because of median filter, first column corrupt
+
+    line = line.astype("uint8")
+
+    # # remove small noise
+    # elem1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))  # opening op kernel size 1
+    # elem2 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))  # opening op kernel size 2
+    # img_mask = cv2.morphologyEx(line, cv2.MORPH_OPEN, elem1)
+    #
+    #
+    # final = cv2.bitwise_and(line, line, mask=img_mask)
+
+    # Remove Connected Component of the given size in pixel and connectivity policy
+    final = removeKsizeConnectedComponent(line, 10, connectivity=4)
+    final[:, 0] = 0  # because of median filter, first column corrupt
+
+    # cv2.imshow('Results', final)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    cv2.imwrite(os.path.join(destinationFolder, imageName), final)
+
+
 if __name__ == '__main__':
 
     sourceFolder = "."
@@ -119,71 +192,9 @@ if __name__ == '__main__':
     result = list(Path(sourceFolder).rglob(regexNameFile))
 
     for file in result:  # fileName
-        imageName = file.name
+        SoccerPreprocessing(file, destinationFolder)
 
-        imgTest = cv2.imread(str(file.resolve()), cv2.IMREAD_COLOR)
+    result = list(Path(sourceFolder).rglob("NoEllipses/*soccer*"))
 
-        # if imageName != "elps_soccer01_2153.png":
-        #     continue
-
-
-
-        # HSV mask applied to get mainly the field
-        # The return value is an RGB image
-        blur = cv2.blur(imgTest, (5, 5))
-        hsv = mask.cut_hsv(blur, h_min=30, h_max=70, s_min=0, s_max=255, v_min=0, v_max=255)
-
-        # result converted to greyscale to get an activation mask
-        hsv_bw = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
-
-        # Binary threshold [0][1,255]
-        activation = 255 * (hsv_bw > 0).astype('uint8')
-
-        # First apply dilatation because in some picture, brown border (dropped by hsv mask) around white lines
-        # Horizontal kernel because it involves the vertical line in the middle of the field
-        elem = cv2.getStructuringElement(cv2.MORPH_RECT, (6, 1))
-        activation = cv2.morphologyEx(activation, cv2.MORPH_DILATE, elem)
-
-        # HSV sends us back the green field part
-        # All other 4-way connected component are noises
-        activation = getLargestConnectedComponent(activation)
-        activation = activation / 255  # np array of 0 or 1
-
-        # Proceed to dilation to recover lost element
-        elem = cv2.getStructuringElement(cv2.MORPH_RECT, (22, 22))
-        activation = cv2.morphologyEx(activation, cv2.MORPH_DILATE, elem)
-
-        # Isolate white line through median blur on luminance
-        # We proceed to OriginalImage - FilteredImage.
-        # The difference should contain field lines luminances
-
-        # LAB space L = Grey level
-        medianFiltering = cv2.cvtColor(imgTest, cv2.COLOR_BGR2LAB)
-        backgroundLuminance = cv2.medianBlur(medianFiltering[:, :, 0], 25)  # median filtering on brightness component
-
-        line = hsv_bw * activation - backgroundLuminance
-
-        # Binary threshold [0][1,255]
-        line[line < 0] = 0
-        line[line > 0] = 255
-        line[:, 0] = 0  # because of median filter, first column corrupt
-
-        line = line.astype("uint8")
-
-        # # remove small noise
-        # elem1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))  # opening op kernel size 1
-        # elem2 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))  # opening op kernel size 2
-        # img_mask = cv2.morphologyEx(line, cv2.MORPH_OPEN, elem1)
-        #
-        #
-        # final = cv2.bitwise_and(line, line, mask=img_mask)
-
-        # Remove Connected Component of the given size in pixel and connectivity policy
-        final = removeKsizeConnectedComponent(line, 10, connectivity=4)
-        final[:, 0] = 0  # because of median filter, first column corrupt
-
-        # cv2.imshow('Results', final)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
-        cv2.imwrite(os.path.join(destinationFolder, imageName), final)
+    for file in result:  # fileName
+        SoccerPreprocessing(file, "./soccer/noEllipses")
