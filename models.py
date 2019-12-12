@@ -79,20 +79,28 @@ def create_model_classification_soccer(modelName, img_height, img_width):
     model.add(MaxPool2D(pool_size=(2, 2)))
 
     # Dropout to reduce overfitting
-    model.add(Dropout(0.3))  # Drop 30 % of inputs
+    model.add(Dropout(0.5))  # Drop 30 % of inputs
 
     model.add(Conv2D(128, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
+
+    model.add(Dropout(0.5))  # Drop 30 % of inputs
 
     model.add(Conv2D(256, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
 
     # Layers for fully connected network and connect it to boolean output
     model.add(Flatten())
-    model.add(Dense(4, activation="sigmoid"))
+
+    model.add(Dense(256, activation="relu"))
+
+    model.add(Dropout(0.5))  # Drop 30 % of inputs
+
+    model.add(Dense(4, activation="softmax"))
 
     # optimizer
-    opt = Adadelta()
+    # opt = Adadelta()
+    opt = Adam()
 
     # compile model
     model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=['accuracy'])
@@ -156,6 +164,66 @@ def create_model_regression_eye(modelName, img_height, img_width):
     # compile model
     loss = define_custom_loss()
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
+
+    model.summary()
+
+    return model
+
+
+def create_model_regression_soccer(modelName, img_height, img_width):
+
+    # Start creating the model
+    model = Sequential(name=modelName)
+
+    # input_shape = (img_height, img_width, 1)
+    input_shape = (img_height, img_width, 1)
+
+    # nb_filter, kernel sizes, input shape of the model
+    model.add(Conv2D(32, (3, 3), activation="relu", input_shape=input_shape))
+
+    # Max pooling to reduce output dimension
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    model.add(Conv2D(64, (3, 3), activation="relu"))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    # Dropout to reduce overfitting
+    model.add(Dropout(0.4))  # Drop 30 % of inputs
+
+    model.add(Conv2D(128, (3, 3), activation="relu"))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    model.add(Dropout(0.4))
+
+    model.add(Conv2D(256, (3, 3), activation="relu"))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+
+    model.add(Dropout(0.4))
+
+    # Layers for fully connected network and connect it to boolean output
+    model.add(Flatten())
+
+    model.add(Dense(256, activation="relu"))
+
+    model.add(Dropout(0.4))
+
+    model.add(Dense(4, activation="linear"))
+
+    # optimizer
+    """
+    Comparison with all other parameters same (10 epochs, first version custom loss, first version model) :
+    Adadelta = 1241
+    RMSprop = 1750
+    Adam = 1211
+    Adagrad = 1023
+    """
+    opt = Adadelta()
+    # opt = RMSprop(learning_rate=0.0001, decay=1e-6)
+    # opt = Adam()
+    # opt = Adagrad()
+
+    # compile model
+    model.compile(loss="mean_squared_error", optimizer=opt, metrics=['accuracy'])
 
     model.summary()
 

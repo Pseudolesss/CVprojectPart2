@@ -10,7 +10,8 @@ from keras_preprocessing.image import ImageDataGenerator
 from model_ellipses.eyes.get_model_data import get_model_data_eye_ellipse
 from models import create_model_regression_eye
 from sklearn.model_selection import train_test_split
-
+from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
+from models import define_custom_loss
 
 def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, batch_size):
     # open session to use GPU for training model
@@ -89,7 +90,8 @@ if __name__ == '__main__':
     loaded_model = model_from_json(loaded_model_json)
     # load weights into new model
     loaded_model.load_weights("model_regr" + str(nb_epochs) + ".h5")
-    loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+    loss = define_custom_loss()
+    loaded_model.compile(loss=loss, optimizer=Adadelta(), metrics=['accuracy'])
 
     # Test the model on an example
 

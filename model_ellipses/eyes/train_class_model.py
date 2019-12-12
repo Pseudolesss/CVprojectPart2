@@ -52,9 +52,6 @@ def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epoc
     # model_history = model.fit(X_train, y_train, validation_split=0.2, epochs=nb_epochs,
     #                           batch_size=batch_size)
 
-    # TODO uses keras capability to augment dataset through image generator
-
-    # TODO take into account TVT ratio
     train_datagen = ImageDataGenerator(rescale=0,
                                        shear_range=0,  # cisaillement
                                        zoom_range=0.,  # 0.1

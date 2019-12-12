@@ -28,9 +28,6 @@ def extract_annotations_soccer():
             # We assume only one notation
             tmp = np.array(soccer[1:], dtype=np.float32)
             points = np.reshape(tmp, (-1, 2))
-            # Convert cartesian y to open cv y coordinate
-            for elem in points:
-                elem[1] = 240 - elem[1]
 
             min_x = +math.inf
             max_x = -math.inf
@@ -50,49 +47,78 @@ def extract_annotations_soccer():
             else:
                 images_annotations[image_name] = [[min_x, min_y, max_x, max_y]]
 
+
         return images_annotations
 
 
-
-
 def get_model_data_soccer_ellipse():
-    image_names = []
-    images_list = []
-    result = list(
-        Path("../../images_database/soccer/newLabSoustraction/").glob('elps*'))
-    for file in result:  # fileName
-        images_list.append(
-            cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
-        image_names.append(file.name)
-
+    dim = (320, 180)
+    image_names = []  # All the images
+    images_list = []  # All the images
+    images_list_restr = []  # Contain the list of all images except the ones with 0 annotation
+    annotations_list_restr = []  # Contain the annotation list for all images except the ones with 0 annotation
     annotations_dict = extract_annotations_soccer()
+    annotations_number = []  # All the images
 
-    annotations_list = []
-    for image_name in image_names:
+    result = list(Path("../../images_database/soccer/newLabSoustraction/").glob('elps*'))
+    for file in result:  # fileName
+        image_name = file.name
+        image = cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE)
+        # We reduce the image size, need to know in what proportion to modify annotation
+        image_shape = np.shape(image)
+        reduce_coeff = int(round(image_shape[1] / dim[0]))  # 4 if 720p, 6 if 1080p
+        image = cv2.resize(image, dsize=dim, interpolation=cv2.INTER_AREA)
+        images_list.append(image)
+        image_names.append(image_name)
+
         if image_name in annotations_dict:
+            images_list_restr.append(image)
             # select only the biggest annotation
             max_size = 0
             biggest_annotation = []
             for annotation in annotations_dict[image_name]:
-                size = (annotation[2] - annotation[0]) * (
-                            annotation[3] - annotation[1])
+                # convert to the good size, cv2 representation (change ymin and ymax) (dim[1] is the image high)
+                annotation = convert_annotation(annotation, dim, reduce_coeff)
+                size = (annotation[2] - annotation[0]) * (annotation[3] - annotation[1])
                 if size > max_size:
                     max_size = size
                     biggest_annotation = annotation
-            annotations_list.append(biggest_annotation)
+            annotations_list_restr.append(biggest_annotation)
+            annotations_number.append(len(annotations_dict[image_name]))
         else:
-            annotations_list.append([])
+            annotations_number.append(0)
 
-    return images_list, annotations_list, annotations_dict
+    return images_list, images_list_restr, annotations_number, annotations_list_restr, annotations_dict
+
+
+def convert_annotation(annotation, dim, reduce_coeff):
+    annotation = list(np.array(annotation) / reduce_coeff)
+    annotation[3] = dim[1] - annotation[3]  # New ymin
+    annotation[1] = dim[1] - annotation[1]  # New ymax
+    tmp = annotation[1]
+    annotation[1] = annotation[3]
+    annotation[3] = tmp
+    return annotation
 
 def get_model_data_soccer_no_ellipse():
+    dim = (320, 180)
     images_list = []
-    result = list(Path("../../images_database/eyes/noEllipses/partial/").glob(
-        'noelps_eye*'))
+    result = list(Path("../../images_database/soccer/noEllipses/").glob('noelps_soccer*'))
 
     for file in result:  # fileName
         images_list.append(
-            cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
-
+            cv2.resize(cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE), dsize=dim, interpolation=cv2.INTER_AREA))
     return images_list
 
+
+if __name__ == '__main__':
+    # Test the resize of the image
+    get_model_data_soccer_ellipse()
+    dim = (320, 180)
+    test_image_name = "elps_soccer01_1266.png"
+    test_image = cv2.resize(
+        cv2.imread("../../images_database/soccer/newLabSoustraction/" + test_image_name, cv2.IMREAD_GRAYSCALE),
+        dsize=dim, interpolation=cv2.INTER_AREA)
+    cv2.imshow('Test', test_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
