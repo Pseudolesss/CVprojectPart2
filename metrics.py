@@ -17,11 +17,20 @@ def dist(elps1, elps2, weight=[1 / 2, 1 / 2, 1 / 5, 1 / 3, 1 / 3]):
 	@Return
 		[float] distance between the two ellipses
 	"""
+
     # Use keras instead of numpy in order to avoid symbolic / non symbolic conflicts in the custom loss
     diff = k.abs(elps1 - elps2)
     diff = diff * weight
     diff = diff / k.sum(weight)
-    return k.sum(diff)
+    diff = k.sum(diff)
+
+    # diff considering a 180degree change in angle
+    diff2 = k.abs(k.abs(elps1 - elps2)- np.array([0, 0, 180, 0, 0], dtype=np.float32))) # array OK for keras?
+    diff2 = diff2 * weight
+    diff2 = diff2 / k.sum(weight)
+    diff2 = k.sum(diff2)
+
+    return min(diff, diff2) # min OK for keras?
 
 
 def metric_elps(ground_truth, detected, weight=[1 / 2, 1 / 2, 1 / 5, 1 / 3, 1 / 3]):
