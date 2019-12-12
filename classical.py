@@ -1,93 +1,7 @@
 import cv2
 import numpy as np
 from imgTools import display, multiDisplay
-import segment_detector as sd
-
-def ellipseDistance(ell1, ell2):
-    center1 = ell1[0]
-    axes1 = ell1[1]
-    alpha1 = ell1[2]
-    
-    x1, y1 = center1
-    d10, d11 = axes1
-    
-    center2 = ell2[0]
-    axes2 = ell2[1]
-    alpha2 = ell2[2]
-    
-    x2, y2 = center2
-    d20, d21 = axes2
-    
-    distSq = (x1 - x2)**2 + (y1 - y2)**2
-    
-    return distSq**(1/2)
-
-def sumEllipses(ell1, ell2):
-    center1 = ell1[0]
-    axes1 = ell1[1]
-    alpha1 = ell1[2]
-    
-    x1, y1 = center1
-    d10, d11 = axes1
-    
-    center2 = ell2[0]
-    axes2 = ell2[1]
-    alpha2 = ell2[2]
-    
-    x2, y2 = center2
-    d20, d21 = axes2
-    
-    x = x1 + x2
-    y = y1 + y2
-    
-    d0 = d10 + d20
-    d1 = d11 + d21
-    
-    alpha = alpha1
-    
-    return [(int(x), int(y)), (int(d0), int(d1)), alpha]
-
-def mergeEllipses(ellipses, dist_threshold, qtt_threshold):
-    mergedParams = []
-    cnt = []
-    
-    mergedParams.append(ellipses[0])
-    cnt.append(1)
-    
-    for ellipse in ellipses[1:]:
-        found = False
-        for i in range(len(mergedParams)):
-            params = mergedParams[i]
-            dist = ellipseDistance(params, ellipse)
-            print(dist)
-            if dist < dist_threshold:
-                mergedParams[i] = sumEllipses(ellipse, mergedParams[i])
-                cnt[i] += 1
-                found = True
-        if not found:
-            mergedParams.append(ellipse)
-            cnt.append(1)
-
-    valid_merges = []
-
-    for i in range(len(mergedParams)):
-        if cnt[i] > qtt_threshold: 
-            ell = mergedParams[i]
-            center = ell[0]
-            axes = ell[1]
-            alpha = ell[2]
-        
-            x, y = center
-            d0, d1 = axes
-
-            x /= cnt[i]
-            y /= cnt[i]
-            d0 /= cnt[i]
-            d1 /= cnt[i]       
-        
-            valid_merges.append([(int(x), int(y)), (int(d0), int(d1)), alpha])
-    
-    return valid_merges
+#import segment_detector as sd
         
 """
     Yuen, H. K. and Princen, J. and Illingworth, J. and Kittler, J., 
@@ -112,15 +26,13 @@ def distance(pt1, pt2):
     return (sqdist)**(1/2), sqdist
 
 # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1.8792&rep=rep1&type=pdf
-def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength, bags, threshold):
+def youghongQiangEllipse(image, minDist, maxDist, minLength, maxLength, bags, threshold, ratio=0.15):
     """ 
     Evaluates the ellipse parameters present in a binary contour image
     by looking for plausible main axes and accumulating secondary axes.
     
     @Args:
         image:     [np.array] binary contour image
-        n_pixels:  [int] The number of pixels of the contour to be randomly 
-                   taken. None to take everything.
         minDist:   [numeric] The minimum length for the main axis
         maxDist:   [numeric] The maximum length for the main axis
         minLength: [numeric] The minimum length for the secondary axis
@@ -129,15 +41,17 @@ def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength
                    accumulator resolution is (maxLength - minLength) / bags.
         threshold: [int] The number of hits in an accumulator bag needed for this
                    bag to be validated as an actual ellipse parameter.
+        ratio:     [float] The percentage of pixels of the contour to be randomly 
+                   taken. None to take everything.
     @Return:
         a list of ellipses in the format 
         [[(centerX, centerY), (mainHalfLength, secondaryHalfLength), angle)] ...]
     """
     pixels = np.random.permutation(np.argwhere(image==255))
     
-    if n_pixels is not None:
-        pixels = pixels[:n_pixels]
-        
+    if ratio is not None:
+        n_pixels = int(ratio * len(pixels))
+        pixels = pixels[:n_pixels]   
     accLength = maxLength - minLength
     
     ellipses = []
@@ -146,10 +60,7 @@ def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength
         for p2 in pixels:
             
             accumulator = np.zeros((bags,))
-            p3s = [(0, 0) for _ in range(bags)]
-            ds = [0 for _ in range(bags)]
-            fs = [0 for _ in range(bags)]
-            bs = [0 for _ in range(bags)]
+            not_accumulated_pixels = []
             
             dist, distSq = distance(p1, p2)
             if dist > minDist and dist < maxDist:
@@ -158,25 +69,27 @@ def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength
                 aSq   = distSq / 4
 
                 for p3 in pixels:
-                    #verif que p3 n'est ni p1 ni p2...
                     d, dSq = distance(p0, p3)
                     if d > minDist and d < a:
                         f, fSq = distance(p3, p2)
                         cosTau = (aSq + dSq - fSq) / (2 * a * d)
                         cosTauSq = cosTau * cosTau
-                        bSq    = ((aSq * dSq) * (1 - cosTauSq)) / (aSq - dSq * cosTauSq)
-                        b      = bSq**(1/2)
-                        
-                        if b > minLength and b < maxLength:
-                            bag_id = int((b - minLength) * (bags / accLength))
-                            accumulator[bag_id] += 1
-                            p3s[bag_id] = p3
-                            ds[bag_id] = d
-                            fs[bag_id] = f
-                            bs[bag_id] = b
+                        if aSq - dSq * cosTauSq != 0:
+                            bSq = ((aSq * dSq) * (1 - cosTauSq)) / (aSq - dSq * cosTauSq)
+                            bSq = 0 if bSq < 0 else bSq  
+                            b   = bSq**(1/2)
+                          
+                            if b > minLength and b < maxLength:
+                                bag_id = int((b - minLength) * (bags / accLength))
+                                accumulator[bag_id] += 1
+                            else:
+                                not_accumulated_pixels.append(p3)
+                    else:
+                        not_accumulated_pixels.append(p3)
                             
                 best = np.argmax(accumulator)
                 if accumulator[best] > threshold:
+                    
                     b = minLength + best * (accLength / bags)   
                     y1, x1 = p1
                     y2, x2 = p2  
@@ -184,27 +97,26 @@ def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength
                     alpha = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi
                     ellipse = [(int(x0), int(y0)), (int(a), int(b)), alpha] 
                     ellipses.append(ellipse)
-                    #print("alpha = {} p0 = {} p1 = {} p2 = {} p3 = {} a = {} d = {} f = {} b' = {} b = {}".format(alpha, p0, p1, p2, p3s[best], a, ds[best], fs[best], b, bs[best]))
+                    
+                    pixels = np.array(not_accumulated_pixels)
     return ellipses
     
 if __name__ == "__main__":
-    image = cv2.imread("test_img/test_el.png", cv2.IMREAD_GRAYSCALE)
-    _, imageBinary = cv2.threshold(image, 30, 255, cv2.THRESH_BINARY)
-    
-    ellipses1 = youghongQiangEllipse(imageBinary, 300, 10, 150, 10, 150, 360, 4)
-    ellipses2 = mergeEllipses(ellipses1, 50, 2)
+    #image = cv2.imread("images_database/eyes/elps_eye01_2014-11-26_08-49-31-060.png", cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread("images_database/eyes/elps_eye03_2014-12-09_02-42-00-002.png", cv2.IMREAD_GRAYSCALE)
+    image = cv2.resize(image,(360, 200)) # Images resized to 360p
+    _, imageBinary = cv2.threshold(image, 100, 255, cv2.THRESH_BINARY)
+    imageBinary = cv2.Canny(image, 20, 100)
+    #(image, n_pixels, minDist, maxDist, minLength, maxLength, bags, threshold)
+    ellipses1 = youghongQiangEllipse(imageBinary, 15, 50, 5, 25, 40, 10, 0.5)
     
     print(len(ellipses1))
-    print(len(ellipses2))
      
-    imageBGR = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)*0
-    
+    imageBGR = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     for ell in ellipses1:
         cv2.ellipse(imageBGR, ell[0], ell[1], ell[2], 0, 360, (0, 0, 255))
-        
-    for ell in ellipses2:
-        cv2.ellipse(imageBGR, ell[0], ell[1], ell[2], 0, 360, (255, 0, 0))
- 	
+    
+
     display("", imageBinary)
     multiDisplay(["", ""], [image, imageBGR], 2)
     #cv2.imshow("test", imageBGR)
