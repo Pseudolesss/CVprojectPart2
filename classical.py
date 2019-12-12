@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+from imgTools import display, multiDisplay
+import segment_detector as sd
 
 def ellipseDistance(ell1, ell2):
     center1 = ell1[0]
@@ -111,7 +113,31 @@ def distance(pt1, pt2):
 
 # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1.8792&rep=rep1&type=pdf
 def youghongQiangEllipse(image, n_pixels, minDist, maxDist, minLength, maxLength, bags, threshold):
-    pixels = np.random.permutation(np.argwhere(image==255))[:n_pixels]
+    """ 
+    Evaluates the ellipse parameters present in a binary contour image
+    by looking for plausible main axes and accumulating secondary axes.
+    
+    @Args:
+        image:     [np.array] binary contour image
+        n_pixels:  [int] The number of pixels of the contour to be randomly 
+                   taken. None to take everything.
+        minDist:   [numeric] The minimum length for the main axis
+        maxDist:   [numeric] The maximum length for the main axis
+        minLength: [numeric] The minimum length for the secondary axis
+        maxLength: [numeric] The maximum length for the secondary axis
+        bags:      [int] The number of bags used for the accumulator. The 
+                   accumulator resolution is (maxLength - minLength) / bags.
+        threshold: [int] The number of hits in an accumulator bag needed for this
+                   bag to be validated as an actual ellipse parameter.
+    @Return:
+        a list of ellipses in the format 
+        [[(centerX, centerY), (mainHalfLength, secondaryHalfLength), angle)] ...]
+    """
+    pixels = np.random.permutation(np.argwhere(image==255))
+    
+    if n_pixels is not None:
+        pixels = pixels[:n_pixels]
+        
     accLength = maxLength - minLength
     
     ellipses = []
@@ -171,13 +197,15 @@ if __name__ == "__main__":
     print(len(ellipses1))
     print(len(ellipses2))
      
-    imageBGR = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    imageBGR = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)*0
     
     for ell in ellipses1:
         cv2.ellipse(imageBGR, ell[0], ell[1], ell[2], 0, 360, (0, 0, 255))
         
     for ell in ellipses2:
         cv2.ellipse(imageBGR, ell[0], ell[1], ell[2], 0, 360, (255, 0, 0))
- 
-    cv2.imshow("test", imageBGR)
-    cv2.waitKey(50000)
+ 	
+    display("", imageBinary)
+    multiDisplay(["", ""], [image, imageBGR], 2)
+    #cv2.imshow("test", imageBGR)
+    #cv2.waitKey(50000)
