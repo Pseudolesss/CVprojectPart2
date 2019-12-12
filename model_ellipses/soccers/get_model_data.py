@@ -59,7 +59,7 @@ def get_model_data_soccer():
     image_names = []
     images_list = []
     result = list(
-        Path("../../images_database/soccer/preprocessed1/").glob('elps*'))
+        Path("../../images_database/soccer/newLabSoustraction/").glob('elps*'))
     for file in result:  # fileName
         images_list.append(
             cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE))
@@ -84,3 +84,4 @@ def get_model_data_soccer():
             annotations_list.append([])
 
     return images_list, annotations_list, annotations_dict
+

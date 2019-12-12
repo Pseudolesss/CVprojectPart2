@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from imgTools import display, multiDisplay
         
 """
     Yuen, H. K. and Princen, J. and Illingworth, J. and Kittler, J., 
@@ -98,3 +99,24 @@ def youghongQiangEllipse(image, minDist, maxDist, minLength, maxLength, bags, th
                     
                     pixels = np.array(not_accumulated_pixels)
     return ellipses
+    
+if __name__ == "__main__":
+    #image = cv2.imread("images_database/eyes/elps_eye01_2014-11-26_08-49-31-060.png", cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread("images_database/eyes/elps_eye03_2014-12-09_02-42-00-002.png", cv2.IMREAD_GRAYSCALE)
+    image = cv2.resize(image,(360, 200)) # Images resized to 360p
+    _, imageBinary = cv2.threshold(image, 100, 255, cv2.THRESH_BINARY)
+    imageBinary = cv2.Canny(image, 20, 100)
+    #(image, n_pixels, minDist, maxDist, minLength, maxLength, bags, threshold)
+    ellipses1 = youghongQiangEllipse(imageBinary, 15, 50, 5, 25, 40, 10, 0.5)
+    
+    print(len(ellipses1))
+     
+    imageBGR = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    for ell in ellipses1:
+        cv2.ellipse(imageBGR, ell[0], ell[1], ell[2], 0, 360, (0, 0, 255))
+    
+
+    display("", imageBinary)
+    multiDisplay(["", ""], [image, imageBGR], 2)
+    #cv2.imshow("test", imageBGR)
+    #cv2.waitKey(50000)
