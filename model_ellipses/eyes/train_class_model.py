@@ -14,16 +14,6 @@ from models import create_model_classification_eye
 from sklearn.model_selection import train_test_split
 
 
-# Will move percentage of the images from a folder to another
-# It will be used to create our Test Set for classification
-def move_percentage_of_images(sourceFolder, destinationFolder, percentage):
-    result = list(Path(sourceFolder).glob('*.png'))
-    random.shuffle(result)
-
-    for i in range(int(len(result) * percentage)):  # fileName
-        shutil.move(str(result[i].resolve()), destinationFolder)
-
-
 def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epochs, batch_size):
     # open session to use GPU for training model
     # config = tf.ConfigProto()
@@ -134,11 +124,6 @@ def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epoc
 
 
 if __name__ == '__main__':
-    # TODO these next call are to be used for having folders for test set generator
-    # move_percentage_of_images("../../images_database/Model_EYES/classifier/TrainingValidation/ellipse", "../../images_database/Model_EYES/classifier/Test/ellipse", 0.2)
-    # move_percentage_of_images(
-    #     "../../images_database/Model_EYES/classifier/TrainingValidation/noEllipse",
-    #     "../../images_database/Model_EYES/classifier/Test/noEllipse", 0.2)
 
     images_list_eye, annotations_list_eye, annotations_dict_eye = get_model_data_eye_ellipse()
     images_list_eye_no_elps = get_model_data_eye_no_ellipse()

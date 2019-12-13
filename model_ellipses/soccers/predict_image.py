@@ -2,42 +2,51 @@ from images_database.preprocess_soccer import img_soccer_preprocessing
 from keras.models import model_from_json
 from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
 import numpy as np
+import cv2
 
 
 def predict_image (input_image_path):
+    dim = (320, 180)
 
     # First step : Preprocess the image
-    preprocessed_image = img_soccer_preprocessing(input_image_path)
+    input_image = cv2.imread(input_image_path, cv2.IMREAD_COLOR)
+    preprocessed_image = img_soccer_preprocessing(input_image)
 
     # Second step : Classify the image
 
     # load the model
-    with open("../saved_models/model_class.json", "r") as json_file:
-        loaded_model_json = json_file.read()
-    loaded_model = model_from_json(loaded_model_json)
-    loaded_model.load_weights("model_class.h5")
-    loaded_model.compile(loss="categorical_crossentropy", optimizer=Adadelta(), metrics=['accuracy'])
-    result = loaded_model.predict(np.reshape(preprocessed_image, [1, 180, 320, 1]))[0]
-    number_ellipses = result.index(1)[0]
-    print(number_ellipses)
+    with open("./saved_models/model_class.json", "r") as json_file:
+        loaded_model_json_class = json_file.read()
+    loaded_model_class = model_from_json(loaded_model_json_class)
+    loaded_model_class.load_weights("./saved_models/model_class.h5")
+    loaded_model_class.compile(loss="categorical_crossentropy", optimizer=Adadelta(), metrics=['accuracy'])
+    image = cv2.resize(preprocessed_image, dsize=dim, interpolation=cv2.INTER_AREA)
+    result = loaded_model_class.predict(np.reshape(image, [1, 180, 320, 1]))[0]
+    number_ellipses = result.argmax()
+    print(result)
 
     # Third step : Make the multiple regressions on the image
-    with open("../saved_models/model_regr.json", "r") as json_file:
-        loaded_model_json = json_file.read()
-    loaded_model = model_from_json(loaded_model_json)
-    loaded_model.load_weights("model_regr.h5")
-    loaded_model.compile(loss="mean_squared_error", optimizer=Adadelta(), metrics=['accuracy'])
+    with open("./saved_models/model_regr.json", "r") as json_file:
+        loaded_model_json_regr = json_file.read()
+    loaded_model_regr = model_from_json(loaded_model_json_regr)
+    loaded_model_regr.load_weights("./saved_models/model_regr.h5")
+    loaded_model_regr.compile(loss="mean_squared_error", optimizer=Adadelta(), metrics=['accuracy'])
     ellipses_detected = []
-    image = preprocessed_image
+    observation_image = image.copy()
     for i in range(number_ellipses):
-        result = loaded_model.predict(np.reshape(image, [1, 180, 320, 1]))[0]
+        result = loaded_model_regr.predict(np.reshape(image, [1, 180, 320, 1]))[0]
         ellipses_detected.append(result)
         cv2.rectangle(image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), 0, -1)
+        cv2.rectangle(observation_image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), 255, 1)
         cv2.imshow('Rectangle', image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     print(ellipses_detected)
-    
+    cv2.imshow('Different Ellipses', observation_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    return ellipses_detected
+
 
 if __name__ == '__main__':
-    predict_image("images_database/Team01/elps_soccer01_1131.png")
+    predict_image("../../images_database/Team01/elps_soccer01_1015.png")

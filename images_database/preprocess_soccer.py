@@ -2,7 +2,7 @@ import cv2
 import os
 import numpy as np
 from pathlib import Path
-import part1_soccer_hsv_mask as mask
+import images_database.part1_soccer_hsv_mask as mask
 import matplotlib.pyplot as plt
 
 
