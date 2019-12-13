@@ -81,7 +81,7 @@ def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_ep
 if __name__ == '__main__':
     _, images_list_restr_soccer, _, annotations_list_restr_soccer, annotations_dict = get_model_data_soccer_ellipse()
 
-    nb_epochs = 30
+    nb_epochs = 20
     batch_size = 50
     trainRegressor("ModelName", images_list_restr_soccer, annotations_list_restr_soccer, nb_epochs, batch_size)
 

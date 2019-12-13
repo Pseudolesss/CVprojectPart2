@@ -114,17 +114,11 @@ def morphologicalSkeleton(img):
     return skel
 
 
-def SoccerPreprocessing(file, destinationFolder):
-    imageName = file.name
-
-    imgTest = cv2.imread(str(file.resolve()), cv2.IMREAD_COLOR)
-
-    # if imageName != "elps_soccer01_2153.png":
-    #     continue
+def img_soccer_preprocessing(image):
 
     # HSV mask applied to get mainly the field
     # The return value is an RGB image
-    blur = cv2.blur(imgTest, (5, 5))
+    blur = cv2.blur(image, (5, 5))
     hsv = mask.cut_hsv(blur, h_min=30, h_max=70, s_min=0, s_max=255, v_min=0, v_max=255)
 
     # result converted to greyscale to get an activation mask
@@ -152,7 +146,7 @@ def SoccerPreprocessing(file, destinationFolder):
     # The difference should contain field lines luminances
 
     # LAB space L = Grey level
-    medianFiltering = cv2.cvtColor(imgTest, cv2.COLOR_BGR2LAB)
+    medianFiltering = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
     backgroundLuminance = cv2.medianBlur(medianFiltering[:, :, 0], 25)  # median filtering on brightness component
 
     line = hsv_bw * activation - backgroundLuminance
@@ -179,6 +173,19 @@ def SoccerPreprocessing(file, destinationFolder):
     # cv2.imshow('Results', final)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+
+    return final
+
+
+def SoccerPreprocessing(file, destinationFolder):
+    imageName = file.name
+
+    imgTest = cv2.imread(str(file.resolve()), cv2.IMREAD_COLOR)
+
+    # if imageName != "elps_soccer01_2153.png":
+    #     continue
+
+    final = img_soccer_preprocessing(imgTest)
 
     cv2.imwrite(os.path.join(destinationFolder, imageName), final)
 

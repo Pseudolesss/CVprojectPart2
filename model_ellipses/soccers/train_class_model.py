@@ -121,7 +121,7 @@ def trainClassifier(modelName, images_list_soccer, annotations_number_soccer, im
 
 
 if __name__ == '__main__':
-    images_list_soccer, annotations_number_soccer, annotations_list_soccer, annotations_dict_soccer = get_model_data_soccer_ellipse()
+    images_list_soccer, _, annotations_number_soccer, _, annotations_dict_soccer = get_model_data_soccer_ellipse()
     images_list_soccer_no_elps = get_model_data_soccer_no_ellipse()
 
     nb_epochs = 15

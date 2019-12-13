@@ -1,10 +1,19 @@
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout
 from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
-from metrics import dist
+import keras.backend as k
+
 
 # With the normalized version of the custom loss :
 # classic : 412, improved ( angle 1/10 and last dense 256) : 308
+
+def dist(y_true, y_pred, weight):
+    # Use keras instead of numpy in order to avoid symbolic / non symbolic conflicts in the custom loss
+    diff = k.abs(y_true - y_pred)
+    diff = diff * weight
+    diff = diff / k.sum(weight)
+    diff = k.sum(diff)
+    return diff
 
 def define_custom_loss(weight=None):
     if weight is None:
@@ -100,7 +109,7 @@ def create_model_classification_soccer(modelName, img_height, img_width):
 
     # optimizer
     # opt = Adadelta()
-    opt = Adam()
+    opt = Adadelta()
 
     # compile model
     model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=['accuracy'])
@@ -202,6 +211,10 @@ def create_model_regression_soccer(modelName, img_height, img_width):
 
     # Layers for fully connected network and connect it to boolean output
     model.add(Flatten())
+
+    model.add(Dense(256, activation="relu"))
+
+    model.add(Dropout(0.4))
 
     model.add(Dense(256, activation="relu"))
 
