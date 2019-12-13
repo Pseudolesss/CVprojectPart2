@@ -5,6 +5,7 @@ from pathlib import Path
 import part1_soccer_hsv_mask as mask
 import matplotlib.pyplot as plt
 
+
 def applyPreprocessingDB(sourceFolder, destinationFolder, function, regexNameFile):
     result = list(Path(sourceFolder).rglob(regexNameFile))
 
@@ -61,6 +62,7 @@ def getLargestConnectedComponent(image):
     img2[output == max_label] = 255
     return img2
 
+
 def removeKsizeConnectedComponent(image, size, connectivity=4):
     image = image.astype('uint8')
     nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(image, connectivity=connectivity)
@@ -85,13 +87,14 @@ def applyContrast(grey_image, factor):
     # Cast int back to uint8
     return np.uint8(grey_image)
 
+
 def invert_0_255_image(image):
     image = image + 1  # roundabout overflow (0 => 1, 255 => 0)
     return image * 255
 
+
 # Interessant mais pas pour ce contexte
 def morphologicalSkeleton(img):
-
     image = np.copy(img)
     skel = np.zeros(image.shape, dtype="uint8")
 
