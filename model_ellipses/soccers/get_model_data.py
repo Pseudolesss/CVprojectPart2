@@ -10,46 +10,57 @@ database_directory = os.path.join(os.getcwd(), '../../images_database')
 annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
 
 
+def points_to_annotations(images_annotations, image_name, points):
+    min_x = +math.inf
+    max_x = -math.inf
+    min_y = +math.inf
+    max_y = -math.inf
+    for x, y in points:
+        min_x = min(min_x, x)
+        min_y = min(min_y, y)
+        max_y = max(max_y, y)
+        max_x = max(max_x, x)
+
+    if image_name in images_annotations:
+        images_annotations[image_name] = images_annotations[image_name] + [[min_x, min_y, max_x, max_y]]
+    else:
+        images_annotations[image_name] = [[min_x, min_y, max_x, max_y]]
+
+
 def extract_annotations_soccer():
     images_annotations = dict()
+
+    # Original annotations (csv file)
+
     with open(annotationFile, mode='r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
 
         result = []
-
         for row in csv_reader:
-            # print(row)
-            # print(row[0])
             if 'elps_soccer' in row[0]:
                 result.append([row[1:], row[0]])
 
-        # According to source code, Width >= Height. ret[1] = size Width and Heigth of rectangle, ret[0] = center of mass (height(vers le bas), width) ret[3]= angle in degrees [0 - 180[
         for soccer, image_name in result:
-
-            # We assume only one notation
             tmp = np.array(soccer[1:], dtype=np.float32)
             points = np.reshape(tmp, (-1, 2))
+            points_to_annotations(images_annotations, image_name, points)
 
-            min_x = +math.inf
-            max_x = -math.inf
-            min_y = +math.inf
-            max_y = -math.inf
-            for x, y in points:
-                min_x = min(min_x, x)
-                min_y = min(min_y, y)
-                max_y = max(max_y, y)
-                max_x = max(max_x, x)
+    # Generated annotations (pkl file)
+    aze = open("../../images_database/soccer/AugmentedDataset/AugmentedAnnotations.pkl", 'rb')
+    generated_annotations_dict = load(aze)
+    # This dictionary contains the ellipses in the format of a array [[x1, y1, x1, x2, ...], ]
 
-            if image_name in images_annotations:
-                images_annotations[image_name] = images_annotations[
-                                                     image_name] + [
-                                                     [min_x, min_y, max_x,
-                                                      max_y]]
-            else:
-                images_annotations[image_name] = [[min_x, min_y, max_x, max_y]]
+    for image_name in generated_annotations_dict.keys():
+        for ellipse in generated_annotations_dict[image_name]:
+            points = []
+            for i in range(0, len(ellipse), 2):
+                (x, y) = (ellipse[i], ellipse[i+1])
+                points += [(x, y)]
+            print(points)
+            points_to_annotations(images_annotations, image_name, points)
+    aze.close()
 
-
-        return images_annotations
+    return images_annotations
 
 
 def get_model_data_soccer_ellipse():
@@ -58,18 +69,13 @@ def get_model_data_soccer_ellipse():
     images_list = []  # All the images
     images_list_restr = []  # Contain the list of all images except the ones with 0 annotation
     annotations_list_restr = []  # Contain the annotation list for all images except the ones with 0 annotation
-    # aze = open("dict_generated_annotations.p", 'rb')
-    # generated_annotations_dict = load(aze)
-    # aze.close()
+
     # annotations_dict = {**extract_annotations_soccer(), **generated_annotations_dict}
+    annotations_number = []  # All the images
     annotations_dict = extract_annotations_soccer()
 
-    annotations_number = []  # All the images
-
-    result = list(Path("../../images_database/soccer/newLabSoustraction/").glob('elps*'))
-    # result.append(list(Path("../../images_database/soccer/generated/").glob('elps*')))
-
-    # print(result)
+    result = list(Path("../../images_database/soccer/preprocessed1/").glob('elps*'))
+    result += (list(Path("../../images_database/soccer/AugmentedDataset/").glob('FLIP_elps*')))
 
     for file in result:  # fileName
         image_name = file.name
@@ -82,6 +88,7 @@ def get_model_data_soccer_ellipse():
         image_names.append(image_name)
 
         if image_name in annotations_dict:
+            # print(image_name, annotations_dict[image_name])
             images_list_restr.append(image)
             # select only the biggest annotation
             max_size = 0
@@ -128,7 +135,7 @@ if __name__ == '__main__':
     dim = (320, 180)
     test_image_name = "elps_soccer01_1266.png"
     test_image = cv2.resize(
-        cv2.imread("../../images_database/soccer/newLabSoustraction/" + test_image_name, cv2.IMREAD_GRAYSCALE),
+        cv2.imread("../../images_database/soccer/preprocessed1/" + test_image_name, cv2.IMREAD_GRAYSCALE),
         dsize=dim, interpolation=cv2.INTER_AREA)
     cv2.imshow('Test', test_image)
     cv2.waitKey(0)

@@ -212,6 +212,10 @@ def create_model_regression_soccer(modelName, img_height, img_width):
 
     model.add(Dropout(0.4))
 
+    model.add(Dense(256, activation="relu"))
+
+    model.add(Dropout(0.4))
+
     model.add(Dense(4, activation="linear"))
 
     # optimizer

@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
     dim = (320, 180)
     test_image_name = "elps_soccer01_1266.png"
-    test_image = cv2.imread("../../images_database/soccer/newLabSoustraction/" + test_image_name, cv2.IMREAD_GRAYSCALE)
+    test_image = cv2.imread("../../images_database/soccer/preprocessed1/" + test_image_name, cv2.IMREAD_GRAYSCALE)
     # load the model
     with open("./saved_models/model_class.json", "r") as json_file:
         loaded_model_json_class = json_file.read()

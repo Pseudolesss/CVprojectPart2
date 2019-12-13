@@ -38,14 +38,14 @@ def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epoc
     # model_history = model.fit(X_train, y_train, validation_split=0.2, epochs=nb_epochs,
     #                           batch_size=batch_size)
 
-    train_datagen = ImageDataGenerator(rescale=0,
-                                       shear_range=0,  # cisaillement
-                                       zoom_range=0.,  # 0.1
-                                       width_shift_range=0.,
+    train_datagen = ImageDataGenerator(rescale=0.1,
+                                       shear_range=0.1,  # cisaillement
+                                       zoom_range=0.1,  # 0.1
+                                       width_shift_range=0.1,
                                        # 0.1  # percentage or pixel number
-                                       height_shift_range=0.,
+                                       height_shift_range=0.1,
                                        # 0.1  # percentage or pixel number
-                                       horizontal_flip=False,  # True
+                                       horizontal_flip=True,  # True
                                        dtype='uint8',
                                        validation_split=0.2)  # set validation split
 
