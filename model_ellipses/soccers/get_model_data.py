@@ -4,6 +4,7 @@ import os
 import math
 import numpy as np
 from pathlib import Path
+from pickle import dump, load
 
 database_directory = os.path.join(os.getcwd(), '../../images_database')
 annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
@@ -57,10 +58,19 @@ def get_model_data_soccer_ellipse():
     images_list = []  # All the images
     images_list_restr = []  # Contain the list of all images except the ones with 0 annotation
     annotations_list_restr = []  # Contain the annotation list for all images except the ones with 0 annotation
+    # aze = open("dict_generated_annotations.p", 'rb')
+    # generated_annotations_dict = load(aze)
+    # aze.close()
+    # annotations_dict = {**extract_annotations_soccer(), **generated_annotations_dict}
     annotations_dict = extract_annotations_soccer()
+
     annotations_number = []  # All the images
 
     result = list(Path("../../images_database/soccer/newLabSoustraction/").glob('elps*'))
+    # result.append(list(Path("../../images_database/soccer/generated/").glob('elps*')))
+
+    # print(result)
+
     for file in result:  # fileName
         image_name = file.name
         image = cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE)
@@ -99,6 +109,7 @@ def convert_annotation(annotation, dim, reduce_coeff):
     annotation[1] = annotation[3]
     annotation[3] = tmp
     return annotation
+
 
 def get_model_data_soccer_no_ellipse():
     dim = (320, 180)

@@ -15,6 +15,7 @@ from sklearn.preprocessing import LabelEncoder
 from model_ellipses.soccers.get_model_data import get_model_data_soccer_ellipse, get_model_data_soccer_no_ellipse
 from models import create_model_classification_soccer
 from sklearn.model_selection import train_test_split
+from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
 
 
 # Will move percentage of the images from a folder to another
@@ -29,10 +30,6 @@ def move_percentage_of_images(sourceFolder, destinationFolder, percentage):
 
 def trainClassifier(modelName, images_list_soccer, annotations_number_soccer, images_list_soccer_no_elps,
                     annotations_dict_soccer, nb_epochs, batch_size):
-    # open session to use GPU for training model
-    # config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    # tf.keras.backend.set_session(tf.Session(config=config))
 
     # Eye images dims
     (img_height, img_width) = (180, 320)
@@ -51,31 +48,30 @@ def trainClassifier(modelName, images_list_soccer, annotations_number_soccer, im
     y_train = np.array(y_train)
     y_test = np.array(y_test)
 
-    model_history = model.fit(X_train, y_train, validation_split=0.2, epochs=nb_epochs,
-                              batch_size=batch_size)
+    # model_history = model.fit(X_train, y_train, validation_split=0.2, epochs=nb_epochs, batch_size=batch_size)
 
-    # train_datagen = ImageDataGenerator(rescale=0,
-    #                                    shear_range=0,  # cisaillement
-    #                                    zoom_range=0.,  # 0.1
-    #                                    width_shift_range=0.,
-    #                                    # 0.1  # percentage or pixel number
-    #                                    height_shift_range=0.,
-    #                                    # 0.1  # percentage or pixel number
-    #                                    horizontal_flip=False,  # True
-    #                                    dtype='uint8',
-    #                                    validation_split=0.2)  # set validation split
-    #
-    # train_generator = train_datagen.flow(x=X_train, y=y_train, batch_size=batch_size, subset='training')
-    # validation_generator = train_datagen.flow(x=X_train, y=y_train, batch_size=batch_size, subset='validation')
-    #
-    # model_history = model.fit_generator(
-    #     train_generator,
-    #     # steps_per_epoch=train_generator.samples // batch_size,
-    #     validation_data=validation_generator,
-    #     # validation_steps=validation_generator.samples // batch_size,
-    #     epochs=nb_epochs)
-    #
-    # test_generator = train_datagen.flow(x=X_test, y=y_test, batch_size=batch_size)
+    train_datagen = ImageDataGenerator(rescale=0.1,
+                                       shear_range=0.1,  # cisaillement
+                                       zoom_range=0.1,  # 0.1
+                                       width_shift_range=0.1,
+                                       # 0.1  # percentage or pixel number
+                                       height_shift_range=0.1,
+                                       # 0.1  # percentage or pixel number
+                                       horizontal_flip=True,  # True
+                                       dtype='uint8',
+                                       validation_split=0.2)  # set validation split
+
+    train_generator = train_datagen.flow(x=X_train, y=y_train, batch_size=batch_size, subset='training')
+    validation_generator = train_datagen.flow(x=X_train, y=y_train, batch_size=batch_size, subset='validation')
+
+    model_history = model.fit_generator(
+        train_generator,
+        # steps_per_epoch=train_generator.samples // batch_size,
+        validation_data=validation_generator,
+        # validation_steps=validation_generator.samples // batch_size,
+        epochs=nb_epochs)
+
+    test_generator = train_datagen.flow(x=X_test, y=y_test, batch_size=batch_size)
 
     loss = model_history.history['loss']
     val_loss = model_history.history['val_loss']
@@ -88,20 +84,10 @@ def trainClassifier(modelName, images_list_soccer, annotations_number_soccer, im
     plt.legend()
     plt.show()
 
-    # acc = model_history.history['acc']
-    # val_acc = model_history.history['val_acc']
-    # plt.plot(epochs, acc, 'y', label='Training acc')
-    # plt.plot(epochs, val_acc, 'r', label='Validation acc')
-    # plt.title('Training and validation accuracy')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Accuracy')
-    # plt.legend()
-    # plt.show()
-
     # evaluate the model
 
-    scores = model.evaluate(X_test, y_test, batch_size=batch_size)
-    # scores = model.evaluate_generator(test_generator, steps=test_generator.n)
+    # scores = model.evaluate(X_test, y_test, batch_size=batch_size)
+    scores = model.evaluate_generator(test_generator, steps=test_generator.n)
 
     for i in range(len(model.metrics_names)):
         if model.metrics_names[i] == "loss":
@@ -124,22 +110,23 @@ if __name__ == '__main__':
     images_list_soccer, _, annotations_number_soccer, _, annotations_dict_soccer = get_model_data_soccer_ellipse()
     images_list_soccer_no_elps = get_model_data_soccer_no_ellipse()
 
-    nb_epochs = 15
+    nb_epochs = 30
     batch_size = 50
     trainClassifier("ModelName", images_list_soccer, annotations_number_soccer, images_list_soccer_no_elps,
                     annotations_dict_soccer, nb_epochs, batch_size)
 
-    # # load json and create model
-    # with open("./modelclass" + str(nb_epochs) + ".json", "r") as json_file:
-    #     loaded_model_json = json_file.read()
-    # loaded_model = model_from_json(loaded_model_json)
-    # # load weights into new model
-    # loaded_model.load_weights("model" + str(nb_epochs) + ".h5")
-    #
-    # # test loaded model on an example
-    # loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta',
-    #                      metrics=['accuracy'])
-    # example_image = cv2.imread(
-    #     "../../images_database/eyes/partial/elps_eye01_2014-11-26_08-49-31-060.png",
-    #     cv2.IMREAD_GRAYSCALE)
-    # print(loaded_model.predict(np.reshape(example_image, [1, 180, 320, 1])))
+    # Test the model on an example
+
+    dim = (320, 180)
+    test_image_name = "elps_soccer01_1266.png"
+    test_image = cv2.imread("../../images_database/soccer/newLabSoustraction/" + test_image_name, cv2.IMREAD_GRAYSCALE)
+    # load the model
+    with open("./saved_models/model_class.json", "r") as json_file:
+        loaded_model_json_class = json_file.read()
+    loaded_model_class = model_from_json(loaded_model_json_class)
+    loaded_model_class.load_weights("./saved_models/model_class.h5")
+    loaded_model_class.compile(loss="categorical_crossentropy", optimizer=Adadelta(), metrics=['accuracy'])
+    image = cv2.resize(test_image, dsize=dim, interpolation=cv2.INTER_AREA)
+    result = loaded_model_class.predict(np.reshape(image, [1, 180, 320, 1]))[0]
+    number_ellipses = result.argmax()
+    print(result)

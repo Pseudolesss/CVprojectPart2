@@ -47,16 +47,6 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
-    #
-    # acc = model_history.history['acc']
-    # val_acc = model_history.history['val_acc']
-    # plt.plot(epochs, acc, 'y', label='Training acc')
-    # plt.plot(epochs, val_acc, 'r', label='Validation acc')
-    # plt.title('Training and validation accuracy')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Accuracy')
-    # plt.legend()
-    # plt.show()
 
     # # evaluate the model
     scores = model.evaluate(X_test, y_test)
@@ -108,13 +98,13 @@ if __name__ == '__main__':
 
     cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 255, 0), 1)
 
-    # correct = annotations_dict_eye[test_image_name]
-    # center = (int(round(correct[0])), int(round(correct[1])))
-    # size = (int(round(correct[3])), int(round(correct[4])))
-    # angle = int(round(correct[2]))
-    # print("correct ellipse", correct)
-    #
-    # cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 0, 255), 1)
+    correct = annotations_dict_eye[test_image_name]
+    center = (int(round(correct[0])), int(round(correct[1])))
+    size = (int(round(correct[3])), int(round(correct[4])))
+    angle = int(round(correct[2]))
+    print("correct ellipse", correct)
+
+    cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 0, 255), 1)
 
     cv2.imshow('Ellipse', color_test_image)
     cv2.waitKey(0)

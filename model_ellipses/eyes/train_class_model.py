@@ -15,10 +15,6 @@ from sklearn.model_selection import train_test_split
 
 
 def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epochs, batch_size):
-    # open session to use GPU for training model
-    # config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    # tf.keras.backend.set_session(tf.Session(config=config))
 
     # Eye images dims
     (img_height, img_width) = (240, 320)
@@ -83,26 +79,16 @@ def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epoc
         batch_size=batch_size,
         class_mode='binary', )
 
-    # loss = model_history.history['loss']
-    # val_loss = model_history.history['val_loss']
-    # epochs = range(1, len(loss) + 1)
-    # plt.plot(epochs, loss, 'y', label='Training loss')
-    # plt.plot(epochs, val_loss, 'r', label='Validation loss')
-    # plt.title('Training and validation loss')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Loss')
-    # plt.legend()
-    # plt.show()
-    #
-    # acc = model_history.history['acc']
-    # val_acc = model_history.history['val_acc']
-    # plt.plot(epochs, acc, 'y', label='Training acc')
-    # plt.plot(epochs, val_acc, 'r', label='Validation acc')
-    # plt.title('Training and validation accuracy')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Accuracy')
-    # plt.legend()
-    # plt.show()
+    loss = model_history.history['loss']
+    val_loss = model_history.history['val_loss']
+    epochs = range(1, len(loss) + 1)
+    plt.plot(epochs, loss, 'y', label='Training loss')
+    plt.plot(epochs, val_loss, 'r', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
 
     # # evaluate the model
 
@@ -132,17 +118,3 @@ if __name__ == '__main__':
     batch_size = 50
     trainClassifier("ModelName", images_list_eye, images_list_eye_no_elps, nb_epochs, batch_size)
 
-    # # load json and create model
-    # with open("./modelclass" + str(nb_epochs) + ".json", "r") as json_file:
-    #     loaded_model_json = json_file.read()
-    # loaded_model = model_from_json(loaded_model_json)
-    # # load weights into new model
-    # loaded_model.load_weights("model" + str(nb_epochs) + ".h5")
-    #
-    # # test loaded model on an example
-    # loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta',
-    #                      metrics=['accuracy'])
-    # example_image = cv2.imread(
-    #     "../../images_database/eyes/partial/elps_eye01_2014-11-26_08-49-31-060.png",
-    #     cv2.IMREAD_GRAYSCALE)
-    # print(loaded_model.predict(np.reshape(example_image, [1, 240, 320, 1])))

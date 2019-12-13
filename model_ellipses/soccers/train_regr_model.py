@@ -15,10 +15,6 @@ from model_ellipses.soccers.get_model_data import convert_annotation
 
 
 def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_epochs, batch_size):
-    # open session to use GPU for training model
-    # config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    # tf.keras.backend.set_session(tf.Session(config=config))
 
     # Eye images dims
     (img_height, img_width) = (180, 320)
@@ -48,16 +44,6 @@ def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_ep
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
-    #
-    # acc = model_history.history['acc']
-    # val_acc = model_history.history['val_acc']
-    # plt.plot(epochs, acc, 'y', label='Training acc')
-    # plt.plot(epochs, val_acc, 'r', label='Validation acc')
-    # plt.title('Training and validation accuracy')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Accuracy')
-    # plt.legend()
-    # plt.show()
 
     # # evaluate the model
     scores = model.evaluate(X_test, y_test)

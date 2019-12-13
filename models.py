@@ -21,14 +21,6 @@ def define_custom_loss(weight=None):
 
     def custom_loss(y_true, y_pred):
         return dist(y_true, y_pred, weight)
-        # loss = 0
-        # x_center_true, y_center_true, angle_true, main_size_true, sub_size_true = y_true
-        # x_center_pred, y_center_pred, angle_pred, main_size_pred, sub_size_pred = y_pred
-        # loss += (x_center_pred - x_center_true)**2 + (y_center_pred - y_center_true)**2
-        # loss += (main_size_pred - main_size_true)**2 + (sub_size_pred - sub_size_true)**2
-        # loss += (angle_pred - angle_true)**2 * abs(main_size_pred - sub_size_pred)
-        # return loss
-
     return custom_loss
 
 
@@ -88,12 +80,12 @@ def create_model_classification_soccer(modelName, img_height, img_width):
     model.add(MaxPool2D(pool_size=(2, 2)))
 
     # Dropout to reduce overfitting
-    model.add(Dropout(0.5))  # Drop 30 % of inputs
+    model.add(Dropout(0.4))  # Drop 30 % of inputs
 
     model.add(Conv2D(128, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
 
-    model.add(Dropout(0.5))  # Drop 30 % of inputs
+    model.add(Dropout(0.4))  # Drop 30 % of inputs
 
     model.add(Conv2D(256, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
@@ -103,7 +95,7 @@ def create_model_classification_soccer(modelName, img_height, img_width):
 
     model.add(Dense(256, activation="relu"))
 
-    model.add(Dropout(0.5))  # Drop 30 % of inputs
+    model.add(Dropout(0.4))  # Drop 30 % of inputs
 
     model.add(Dense(4, activation="softmax"))
 
