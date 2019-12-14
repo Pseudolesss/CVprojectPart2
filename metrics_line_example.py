@@ -35,7 +35,7 @@ def metricTot(annoted, detected, error_false_neg = 0.2, error_false_positive = 0
 	return (m1+m2)/2
 
 def evaluate(conn = None):
-	folders = ["images_for_notebook"]
+	folders = ["ReportImages"]
 	
 	if conn is None:
 		host = 'https://learn.cytomine.be'

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import sys
 from images_database.preprocess_eyes import img_eye_partial_preprocessing
 
-database_directory = os.path.join(os.getcwd(), 'images_database')
+database_directory = os.path.join(os.getcwd(), 'ReportImages')
 annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
 
 def extract_annotations_eye():
