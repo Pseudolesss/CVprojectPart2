@@ -12,7 +12,10 @@
 12. metrics_line.py
 13. part_2.ipynb
 14. segment_detector.py
+15. models.py
 
 
 Folders:
 1. ReportImages folder and all its content
+2. model_ellipses
+3. images_database (empty)
