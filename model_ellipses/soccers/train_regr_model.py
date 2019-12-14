@@ -7,8 +7,10 @@ from models import create_model_regression_soccer
 from sklearn.model_selection import train_test_split
 from keras.optimizers import Adadelta
 from model_ellipses.soccers.get_model_data import convert_annotation
+from imgTools import display
 
 # best model found (200, original + flip + shift down) : loss 657 accuracy 97.5
+# new best model found (200, original + flip + flip shift down + flip shift up) : loss 564 accuracy 95
 
 def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_epochs, batch_size):
     """
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     # Train the classifier model
     nb_epochs = 200
     batch_size = 50
-    # trainRegressor("ModelName", images_list_restr_soccer, annotations_list_restr_soccer, nb_epochs, batch_size)
+    trainRegressor("ModelName", images_list_restr_soccer, annotations_list_restr_soccer, nb_epochs, batch_size)
 
     # load the model
     with open("./model_regr" + str(nb_epochs) + ".json", "r") as json_file:
@@ -103,7 +105,5 @@ if __name__ == '__main__':
         print("real bounding boxes", correct )
     print("bounding box found", result)
     cv2.rectangle(test_image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), 255, 1)
-    cv2.imshow('Rectangle', test_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display('Rectangle', test_image)
 

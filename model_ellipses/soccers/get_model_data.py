@@ -5,6 +5,7 @@ import math
 import numpy as np
 from pathlib import Path
 from pickle import dump, load
+from imgTools import display
 
 database_directory = os.path.join(os.getcwd(), '../../images_database')
 annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
@@ -99,7 +100,8 @@ def get_model_data_soccer_ellipse(generated=False):
     result = list(Path("../../images_database/soccer/preprocessed1/").glob('elps*'))
     if generated:
         result += (list(Path("../../images_database/soccer/AugmentedDataset/").glob('FLIP_elps*')))
-        result += (list(Path("../../images_database/soccer/AugmentedDataset/").glob('SHIFT_DOWN_*elps*')))
+        result += (list(Path("../../images_database/soccer/AugmentedDataset/").glob('SHIFT_DOWN_*FLIP_elps*')))
+        result += (list(Path("../../images_database/soccer/AugmentedDataset/").glob('SHIFT_UP_*FLIP_elps*')))
 
     for file in result:  # fileName
         image_name = file.name
@@ -144,7 +146,7 @@ def convert_annotation(annotation, dim, reduce_coeff, image_name):
     """
     annotation = list(np.array(annotation) / reduce_coeff)
     # The generated annotations are already in opencv format, the original are in cyotomine format
-    if "FLIP" not in image_name and "SHIFT_DOWN" not in image_name:
+    if "FLIP" not in image_name:
         annotation[3] = dim[1] - annotation[3]  # New ymin
         annotation[1] = dim[1] - annotation[1]  # New ymax
         tmp = annotation[1]
@@ -175,6 +177,4 @@ if __name__ == '__main__':
     test_image = cv2.resize(
         cv2.imread("../../images_database/soccer/preprocessed1/" + test_image_name, cv2.IMREAD_GRAYSCALE),
         dsize=dim, interpolation=cv2.INTER_AREA)
-    cv2.imshow('Test', test_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display('Test', test_image)

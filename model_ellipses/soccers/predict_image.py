@@ -3,6 +3,7 @@ from keras.models import model_from_json
 from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
 import numpy as np
 import cv2
+from imgTools import display
 
 
 def predict_image (input_image_path):
@@ -27,6 +28,7 @@ def predict_image (input_image_path):
     loaded_model_class.load_weights("./saved_models/model_class.h5")
     loaded_model_class.compile(loss="categorical_crossentropy", optimizer=Adadelta(), metrics=['accuracy'])
     image = cv2.resize(preprocessed_image, dsize=dim, interpolation=cv2.INTER_AREA)
+    color_image = cv2.resize(input_image, dsize=dim, interpolation=cv2.INTER_AREA)
     result = loaded_model_class.predict(np.reshape(image, [1, 180, 320, 1]))[0]
     number_ellipses = result.argmax()
     print(result)
@@ -40,20 +42,24 @@ def predict_image (input_image_path):
     ellipses_detected = []
     observation_image = image.copy()
     # Each time a ellipse is predicted, we remove it from the image and we predict the modified image until no more ell.
+    thresh = 20
     for i in range(number_ellipses):
         result = loaded_model_regr.predict(np.reshape(image, [1, 180, 320, 1]))[0]
         ellipses_detected.append(result)
-        cv2.rectangle(image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), 0, -1)
-        cv2.rectangle(observation_image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), 255, 1)
-        cv2.imshow('Ellipse ' + str(i), image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.rectangle(image, (int(result[0])-thresh, int(result[1])-thresh), (int(result[2])+thresh, int(result[3])+thresh), 0, -1)
+        cv2.rectangle(color_image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), (255, 0, 0), 1)
+        display("Ellipse 1", image, 10, 10)
     print(ellipses_detected)
-    cv2.imshow('Different Ellipses', observation_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display("All ellipses", color_image, 10, 10)
     return ellipses_detected
 
 
 if __name__ == '__main__':
-    predict_image("../../images_database/Team02/elps_soccer01_1232.png")
+    predict_image("../../images_database/Team03/elps_soccer01_1411.png")
+
+    # Interesting results :
+    # images_database/Team03/elps_soccer01_2226.png
+    # images_database/Team03/elps_soccer01_2229.png
+
+    # Bad results :
+    # images_database / Team03 / elps_soccer01_1411.png

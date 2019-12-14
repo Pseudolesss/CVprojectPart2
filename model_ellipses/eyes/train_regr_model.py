@@ -7,8 +7,9 @@ from models import create_model_regression_eye
 from sklearn.model_selection import train_test_split
 from keras.optimizers import Adadelta
 from models import define_custom_loss
+from imgTools import display
 
-
+# Best result :
 def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, batch_size):
     """
     Take the data as input, split and correctly reshape it.
@@ -109,6 +110,5 @@ if __name__ == '__main__':
 
     cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 0, 255), 1)
 
-    cv2.imshow('Ellipse', color_test_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    display('Ellipses', color_test_image)
+
