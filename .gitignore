@@ -212,3 +212,7 @@ myimages/
 *.json
 
 images_database/eyes.zip
+
+images_database/eyes/noEllipses/full/.keep
+
+images_database/noelps_eyes.zip
