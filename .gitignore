@@ -207,12 +207,8 @@ myimages/
 
 .ipynb_checkpoints/
 
-*.h5
 
-*.json
+test.ipynb
 
 images_database/eyes.zip
-
-images_database/eyes/noEllipses/full/.keep
-
 images_database/noelps_eyes.zip

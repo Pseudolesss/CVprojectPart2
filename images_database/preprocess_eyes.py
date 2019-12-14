@@ -74,21 +74,9 @@ def eyeFullPreprocessing(file, destinationFolder):
     # Final result image
     final_result = img_th + edges
 
-    # cv2.namedWindow("Results")
-    # img_concate = np.concatenate((img, img_norm, filtered, contrast, img_th, edges, final_result),
-    #                              axis=1)
-    # cv2.imshow('Results', img_concate)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
     cv2.imwrite(os.path.join(destinationFolder, imageName), final_result)
 
-
-def eyePartialPreprocessing(file, destinationFolder):
-    imageName = file.name
-
-    # Open image in grey mode
-    img = cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE)
+def img_eye_partial_preprocessing(img):
 
     # Normalize image grey values
     img_norm = normalize_image(img)
@@ -111,6 +99,16 @@ def eyePartialPreprocessing(file, destinationFolder):
     img_mask = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, elem)
 
     img_th = cv2.bitwise_and(img_th, img_th, mask=img_mask)
+    return img_th
+
+
+def eyePartialPreprocessing(file, destinationFolder):
+    imageName = file.name
+
+    # Open image in grey mode
+    img = cv2.imread(str(file.resolve()), cv2.IMREAD_GRAYSCALE)
+
+    img_th = img_eye_partial_preprocessing(img)
 
     cv2.imwrite(os.path.join(destinationFolder, imageName), img_th)
 

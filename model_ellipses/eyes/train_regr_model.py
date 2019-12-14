@@ -1,29 +1,32 @@
-import random
-import shutil
 import cv2
 import numpy as np
-from pathlib import Path
 import matplotlib.pyplot as plt
-import tensorflow as tf
 from keras.models import model_from_json
-from keras_preprocessing.image import ImageDataGenerator
 from model_ellipses.eyes.get_model_data import get_model_data_eye_ellipse
 from models import create_model_regression_eye
 from sklearn.model_selection import train_test_split
+from keras.optimizers import Adadelta
+from models import define_custom_loss
+from imgTools import display
 
+# Best result : (200) : 311 loss 94 accuracy
 
 def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, batch_size):
-    # open session to use GPU for training model
-    # config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    # tf.keras.backend.set_session(tf.Session(config=config))
+    """
+    Take the data as input, split and correctly reshape it.
+    Fit the eye regression model with the data and evaluate.
+    Save the trained model into .json and .h5 files
+    :param modelName: Name of the model
+    :param images_list_eye: np.array of eye images (np.array) which contains ellipse.
+    :param annotations_list_eye: np.array of annotations of the corresp. image (np.array with the 5 ellipses parameters)
+    :param nb_epochs: number of epochs
+    :param batch_size: size of the batch
+    """
 
     # Eye images dims
     (img_height, img_width) = (240, 320)
 
-    # preparing input values (uint8 images) and output values (boolean)
-    # We will call an algorithm splitting the Dataset into Training, Validation and Test sets
-
+    # preparing input values (uint8 images) and output values (5 floats)
     X = images_list_eye
     y = annotations_list_eye
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -32,10 +35,12 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
     y_train = np.array(y_train)
     y_test = np.array(y_test)
 
+    # create and fit the model
     model = create_model_regression_eye(modelName, img_height, img_width)
     model_history = model.fit(X_train, y_train, validation_split=0.2, epochs=nb_epochs,
                               batch_size=batch_size)
 
+    # Plot the loss evolution
     loss = model_history.history['loss']
     val_loss = model_history.history['val_loss']
     epochs = range(1, len(loss) + 1)
@@ -46,16 +51,6 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
-    #
-    # acc = model_history.history['acc']
-    # val_acc = model_history.history['val_acc']
-    # plt.plot(epochs, acc, 'y', label='Training acc')
-    # plt.plot(epochs, val_acc, 'r', label='Validation acc')
-    # plt.title('Training and validation accuracy')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Accuracy')
-    # plt.legend()
-    # plt.show()
 
     # # evaluate the model
     scores = model.evaluate(X_test, y_test)
@@ -77,9 +72,12 @@ def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, 
 
 
 if __name__ == '__main__':
-    images_list_eye, annotations_list_eye, annotations_dict = get_model_data_eye_ellipse()
 
-    nb_epochs = 30
+    # Get the data
+    images_list_eye, annotations_list_eye, annotations_dict_eye = get_model_data_eye_ellipse()
+
+    # Train the classifier model
+    nb_epochs = 200
     batch_size = 50
     trainRegressor("ModelName", images_list_eye, annotations_list_eye, nb_epochs, batch_size)
 
@@ -89,29 +87,29 @@ if __name__ == '__main__':
     loaded_model = model_from_json(loaded_model_json)
     # load weights into new model
     loaded_model.load_weights("model_regr" + str(nb_epochs) + ".h5")
-    loaded_model.compile(loss='binary_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+    loss = define_custom_loss()
+    loaded_model.compile(loss=loss, optimizer=Adadelta(), metrics=['accuracy'])
 
     # Test the model on an example
-
-    test_image_name = "elps_eye01_2014-11-26_08-50-45-008.png"
-    test_image = cv2.imread( "../../images_database/eyes/partial/" + test_image_name, cv2.IMREAD_GRAYSCALE)
+    test_image_name = "elps_eye04_2014-12-14_02-19-30-002.png"
+    test_image = cv2.imread("../../images_database/eyes/partial/" + test_image_name, cv2.IMREAD_GRAYSCALE)
     result = loaded_model.predict(np.reshape(test_image, [1, 240, 320, 1]))
+    color_test_image = cv2.imread("../../images_database/Team01/" + test_image_name, cv2.IMREAD_COLOR)
 
     center = (int(round(result[0][0])), int(round(result[0][1])))
-    size = (int(round(result[0][2])), int(round(result[0][3])))
-    angle = int(round(result[0][4]))
+    size = (int(round(result[0][3])), int(round(result[0][4])))
+    angle = int(round(result[0][2]))
     print("obtained ellipse", result)
 
-    correct = annotations_dict[test_image_name]
+    cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 255, 0), 1)
+
+    correct = annotations_dict_eye[test_image_name]
     center = (int(round(correct[0])), int(round(correct[1])))
-    size = (int(round(correct[2])), int(round(correct[3])))
-    angle = int(round(correct[4]))
+    size = (int(round(correct[3])), int(round(correct[4])))
+    angle = int(round(correct[2]))
     print("correct ellipse", correct)
 
-    # color_test_image = cv2.imread("../../images_database/Team01/" + test_image_name, cv2.IMREAD_COLOR)
-    # cv2.imshow('Ellipse', color_test_image)
-    # cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 0, 255), 1)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 0, 255), 1)
 
+    display('Ellipses', color_test_image)
 
