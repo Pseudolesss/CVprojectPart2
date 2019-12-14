@@ -12,7 +12,7 @@ def predict_image(input_image_path):
     Take as input a path of a png image and send in result the array of ellipses detected ( empty if no detected)
     Print the resulting ellipse
     :param input_image_path: path to an image file
-    :return: np.array of ellipse detected (np.array of 5 parameters)
+    :return: ellipse detected (np.array of 5 parameters) if any
     """
     # First step : Preprocess the image
     input_image = cv2.imread(input_image_path, cv2.IMREAD_GRAYSCALE)
@@ -50,8 +50,13 @@ def predict_image(input_image_path):
         print(result)
     else:
         result = []
-    return result
+    return number_ellipses, result
 
 
 if __name__ == '__main__':
-    predict_image("../../images_database/Team01/elps_eye01_2014-11-26_08-49-31-060.png")
+    predict_image("../../images_database/Team03/elps_eye10_2015-01-29_09-01-45-005.png")
+
+    # Good results (best model 1) :
+    # images_database/Team03/elps_eye10_2015-01-29_09-00-15-007.png
+    # images_database/Team03/elps_eye10_2015-01-29_09-01-45-005.png
+
