@@ -66,6 +66,8 @@ def create_model_classification_eye(modelName, img_height, img_width):
     model.add(Conv2D(128, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
 
+    model.add(Dropout(0.3))  # Drop 30 % of inputs
+
     model.add(Conv2D(256, (3, 3), activation="relu"))
     model.add(MaxPool2D(pool_size=(2, 2)))
 

@@ -42,8 +42,8 @@ def trainClassifier(modelName, images_list_eye, images_list_eye_no_elps, nb_epoc
     #                           batch_size=batch_size)
 
     # Declare and flow the generators
-    train_datagen = ImageDataGenerator(rescale=0.1, shear_range=0.1, zoom_range=0.1, width_shift_range=0.1,
-                                       height_shift_range=0.1, horizontal_flip=True, dtype='uint8',
+    train_datagen = ImageDataGenerator(rescale=0., shear_range=0., zoom_range=0., width_shift_range=0.,
+                                       height_shift_range=0., horizontal_flip=False, dtype='uint8',
                                        validation_split=0.2)  # set validation split
 
     train_generator = train_datagen.flow_from_directory(
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     images_list_eye_no_elps = get_model_data_eye_no_ellipse()
 
     # Train the classifier model
-    nb_epochs = 10
+    nb_epochs = 20
     batch_size = 50
     trainClassifier("ModelName", images_list_eye, images_list_eye_no_elps, nb_epochs, batch_size)
 
