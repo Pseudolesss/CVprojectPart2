@@ -37,6 +37,26 @@ def display_images_with_new_anotations(image, annotations):
     cv2.destroyAllWindows()
 
 
+def return_images_with_nested_new_anotations(image, annotations):
+    """ Utility function to return an image with its corresponding ellipses annotations in it"""
+
+    result = np.copy(image)
+
+    result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
+
+    annotations = copy.deepcopy(annotations)
+
+    for ellipse in annotations:
+        coords = list()
+        for i in range(0, len(ellipse), 2):
+            coords.append([int(ellipse[i]), int(result.shape[0] - ellipse[i + 1])])
+
+        coords = np.array([coords], np.int32)
+        cv2.polylines(result, [coords], True, (0, 0, 255))
+
+    return result
+
+
 def flip_image_and_annotations(image, arrayAnnotations):
     """
     This function take as input an image and its corresponding ellipses annotations.
@@ -157,6 +177,46 @@ def random_zoom_image_and_annotations(image, arrayAnnotations, isZoomIn):
 
 def write_augmented_image(name, destinationFolder, image):
     cv2.imwrite(destinationFolder + name, image)
+
+
+def report_augmented_image_and_annotations(functionName, image, imageName, nameFilePathAnnotation):
+    """
+    Utility function for the report to return the augmented image with its modified annotation in it (red polynomial)
+    """
+
+    with open(nameFilePathAnnotation, 'r') as myfile:
+        csv_reader = csv.reader(myfile, delimiter=',')
+
+        csv_list = list()
+
+        for row in csv_reader:
+            tmp = list()
+            tmp.append(row[0])
+            tmp.append(list(row[3:]))
+            csv_list.append(tmp)
+
+        dict = {}
+        for ellipse in csv_list:
+            if ellipse[0] in dict.keys():  # If image already in dict, add ellipse
+                tmp = list(map(float, ellipse[1]))  # Transform string into float values
+                tmp1 = dict[ellipse[0]].copy()
+                tmp1.append(tmp)
+                dict[ellipse[0]] = tmp1
+            else:
+                tmp = list(map(float, ellipse[1]))
+                tmp1 = list()
+                tmp1.append(tmp)
+                dict[ellipse[0]] = tmp1
+        if functionName == "FLIP":
+            (augmented_image, augmented_annotation) = flip_image_and_annotations(image, dict[imageName])
+        elif functionName == "ZOOM":
+            (augmented_image, augmented_annotation, dummy) = random_zoom_image_and_annotations(image, dict[imageName], True)
+        elif functionName == "SHIFT":
+            (augmented_image, augmented_annotation, dummy) = random_y_offset_image_and_annotations(image, dict[imageName], True)
+        else:
+            print("First argument should be one of the following : FLIP ZOOM SHIFT")
+
+        return return_images_with_nested_new_anotations(augmented_image, augmented_annotation)
 
 
 def generate_full_augmented_soccer_dataset(preprocessImageFolder, saveAugmentedImagesDirectory, AnnotationsCSVPath):
