@@ -112,11 +112,15 @@ def eyePartialPreprocessing(file, destinationFolder):
 
     cv2.imwrite(os.path.join(destinationFolder, imageName), img_th)
 
+def applyPreprocessing(sourceFile):
+    applyPreprocessingDB(sourceFile, "./eyes/full", eyeFullPreprocessing,
+                         "Team*/elps_eye*")  # Call eyes png files from database only
+    applyPreprocessingDB(sourceFile, "./eyes/partial", eyePartialPreprocessing,
+                         "Team*/elps_eye*")  # Call eyes png files from database only
+    applyPreprocessingDB(sourceFile, "./eyes/noEllipses/partial", eyePartialPreprocessing,
+                         "NoEllipses/noelps_eye*")
+
 
 if __name__ == '__main__':
-    applyPreprocessingDB(".", "./eyes/full", eyeFullPreprocessing,
-                         "Team*/elps_eye*")  # Call eyes png files from database only
-    applyPreprocessingDB(".", "./eyes/partial", eyePartialPreprocessing,
-                         "Team*/elps_eye*")  # Call eyes png files from database only
-    applyPreprocessingDB(".", "./eyes/noEllipses/partial", eyePartialPreprocessing,
-                         "NoEllipses/noelps_eye*")
+    applyPreprocessing(".")
+

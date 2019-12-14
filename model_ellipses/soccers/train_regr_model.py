@@ -11,6 +11,7 @@ from imgTools import display
 
 # best model found (200, original + flip + shift down) : loss 657 accuracy 97.5
 # new best model found (200, original + flip + flip shift down + flip shift up) : loss 564 accuracy 95
+# 150 dropout 0.3 -> 243 96
 
 def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_epochs, batch_size):
     """
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     _, images_list_restr_soccer, _, annotations_list_restr_soccer, annotations_dict = get_model_data_soccer_ellipse(True)
 
     # Train the classifier model
-    nb_epochs = 200
+    nb_epochs = 150
     batch_size = 50
     trainRegressor("ModelName", images_list_restr_soccer, annotations_list_restr_soccer, nb_epochs, batch_size)
 
