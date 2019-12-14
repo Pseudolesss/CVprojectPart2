@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from keras_preprocessing.image import ImageDataGenerator
 import random
+import copy
 
 def display_two_images(image1, image2):
     result = np.concatenate((image1,image2), axis=1)
@@ -16,7 +17,7 @@ def display_images_with_new_anotations(image, annotations):
 
     result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
 
-    annotations = annotations.copy()
+    annotations = copy.deepcopy(annotations)
 
 
 
@@ -35,6 +36,7 @@ def flip_image_and_annotations(image, arrayAnnotations):
     shape = image.shape
 
     modified_image = image.copy()
+    arrayAnnotations = copy.deepcopy(arrayAnnotations)
     # Apply horizontal flipping
     cv2.flip(modified_image, 1, dst=modified_image)
 
@@ -54,6 +56,7 @@ def random_y_offset_image_and_annotations(image, arrayAnnotations, isShiftUp):
     shape = image.shape
 
     modified_image = image.copy()
+    arrayAnnotations = copy.deepcopy(arrayAnnotations)
 
     # Convert single channel image to three channel for the Image Generator instance
     modified_image = cv2.merge((modified_image, modified_image, modified_image))
@@ -82,6 +85,8 @@ def random_y_offset_image_and_annotations(image, arrayAnnotations, isShiftUp):
 
     # display_images_with_new_anotations(cv2.cvtColor(modified_image, cv2.COLOR_BGR2GRAY), arrayAnnotations)
 
+    modified_image = cv2.cvtColor(modified_image, cv2.COLOR_BGR2GRAY)
+
     return (modified_image, arrayAnnotations, pixel_y_Offset)
 
 
@@ -91,6 +96,7 @@ def random_zoom_image_and_annotations(image, arrayAnnotations, isZoomIn):
     shape = image.shape
 
     modified_image = image.copy()
+    arrayAnnotations = copy.deepcopy(arrayAnnotations)
 
     # Convert single channel image to three channel for the Image Generator instance
     modified_image = cv2.merge((modified_image, modified_image, modified_image))
@@ -119,6 +125,8 @@ def random_zoom_image_and_annotations(image, arrayAnnotations, isZoomIn):
             ellipse[i + 1] = shape[0] / 2 + (1/scaleFactor) * (ellipse[i + 1] - shape[0] / 2)
 
     # display_images_with_new_anotations(cv2.cvtColor(modified_image, cv2.COLOR_BGR2GRAY), arrayAnnotations)
+
+    modified_image = cv2.cvtColor(modified_image, cv2.COLOR_BGR2GRAY)
 
     return (modified_image, arrayAnnotations, scaleFactor)
 
