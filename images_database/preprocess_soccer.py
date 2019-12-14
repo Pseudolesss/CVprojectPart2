@@ -197,9 +197,8 @@ def SoccerPreprocessing(file, destinationFolder):
     cv2.imwrite(os.path.join(destinationFolder, imageName), final)
 
 
-if __name__ == '__main__':
+def applyPreprocessing(sourceFolder):
 
-    sourceFolder = "."
     regexNameFile = "Team*/*soccer*"  # All soccer png files
     destinationFolder = "./soccer/preprocessed1"
 
@@ -213,26 +212,8 @@ if __name__ == '__main__':
     for file in result:  # fileName
         SoccerPreprocessing(file, "./soccer/noEllipses")
 
-# if __name__ == '__main__':
-#
-#     # Call preprocessSoccerImage(img)
-#     # to get equivalent preprocessed image
-#
-#     pass
-#
-#     # sourceFolder = "."
-#     # regexNameFile = "Team*/*soccer*"  # All soccer png files
-#     # regexNameFileNoEllipse = "NoEllipses/noelps_soccer*"
-#     # destinationFolder = "./soccer/preprocessed1"
-#     #
-#     # result = list(Path(sourceFolder).rglob(regexNameFile))
-#     # result.extend(list(Path(sourceFolder).rglob(regexNameFileNoEllipse)))
-#     #
-#     # for file in result:  # fileName
-#     #     imageName = file.name
-#     #
-#     #     imgTest = cv2.imread(str(file.resolve()), cv2.IMREAD_COLOR)
-#     #
-#     #     preprocessedImage = preprocessSoccerImage(imgTest)
-#     #
-#     #     cv2.imwrite(os.path.join(destinationFolder, imageName), preprocessedImage)
+
+if __name__ == '__main__':
+
+    applyPreprocessing(".")
+
