@@ -1,0 +1,18 @@
+1. classical.py
+2. edge_detector.py
+3. evaluateElpsClassical.py
+4. evaluateSegDetec.py
+5. imgTools.py
+6. LSD.py
+7. metrics.py
+8. metrics_box.py
+9. metrics_box_example.py
+10. metrics_elps_example.py
+11. metrics_line_example.py
+12. metrics_line.py
+13. part_2.ipynb
+14. segment_detector.py
+
+
+Folders:
+1. ReportImages folder and all its content
