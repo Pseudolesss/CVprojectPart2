@@ -13,12 +13,9 @@ from sklearn.model_selection import train_test_split
 from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
 from model_ellipses.soccers.get_model_data import convert_annotation
 
+#  Best model (100) : loss 6420, accuracy : 91
 
 def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_epochs, batch_size):
-    # open session to use GPU for training model
-    # config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    # tf.keras.backend.set_session(tf.Session(config=config))
 
     # Eye images dims
     (img_height, img_width) = (180, 320)
@@ -48,16 +45,6 @@ def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_ep
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
-    #
-    # acc = model_history.history['acc']
-    # val_acc = model_history.history['val_acc']
-    # plt.plot(epochs, acc, 'y', label='Training acc')
-    # plt.plot(epochs, val_acc, 'r', label='Validation acc')
-    # plt.title('Training and validation accuracy')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Accuracy')
-    # plt.legend()
-    # plt.show()
 
     # # evaluate the model
     scores = model.evaluate(X_test, y_test)
@@ -81,7 +68,7 @@ def trainRegressor(modelName, images_list_soccer, annotations_list_soccer, nb_ep
 if __name__ == '__main__':
     _, images_list_restr_soccer, _, annotations_list_restr_soccer, annotations_dict = get_model_data_soccer_ellipse()
 
-    nb_epochs = 20
+    nb_epochs = 30
     batch_size = 50
     trainRegressor("ModelName", images_list_restr_soccer, annotations_list_restr_soccer, nb_epochs, batch_size)
 
@@ -96,7 +83,7 @@ if __name__ == '__main__':
     # Test the model on an example
     dim = (320, 180)
     test_image_name = "elps_soccer01_1266.png"
-    test_image = cv2.imread( "../../images_database/soccer/newLabSoustraction/" + test_image_name, cv2.IMREAD_GRAYSCALE)
+    test_image = cv2.imread( "../../images_database/soccer/preprocessed1/" + test_image_name, cv2.IMREAD_GRAYSCALE)
     test_image_shape = np.shape(test_image)
     reduce_coeff = int(round(test_image_shape[1] / dim[0]))
     test_image = cv2.resize(test_image, dsize=dim, interpolation=cv2.INTER_AREA)

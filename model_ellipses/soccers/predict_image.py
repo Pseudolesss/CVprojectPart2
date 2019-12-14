@@ -1,4 +1,4 @@
-from images_database.preprocess_soccer import img_soccer_preprocessing
+from images_database.preprocess_soccer import preprocessSoccerImage
 from keras.models import model_from_json
 from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
 import numpy as np
@@ -10,7 +10,7 @@ def predict_image (input_image_path):
 
     # First step : Preprocess the image
     input_image = cv2.imread(input_image_path, cv2.IMREAD_COLOR)
-    preprocessed_image = img_soccer_preprocessing(input_image)
+    preprocessed_image = preprocessSoccerImage(input_image)
 
     # Second step : Classify the image
 
@@ -49,4 +49,4 @@ def predict_image (input_image_path):
 
 
 if __name__ == '__main__':
-    predict_image("../../images_database/Team01/elps_soccer01_1015.png")
+    predict_image("../../images_database/Team02/elps_soccer01_1232.png")

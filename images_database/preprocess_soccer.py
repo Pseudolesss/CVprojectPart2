@@ -201,7 +201,7 @@ if __name__ == '__main__':
 
     sourceFolder = "."
     regexNameFile = "Team*/*soccer*"  # All soccer png files
-    destinationFolder = "./soccer/newLabSoustraction"
+    destinationFolder = "./soccer/preprocessed1"
 
     result = list(Path(sourceFolder).rglob(regexNameFile))
 
