@@ -34,11 +34,8 @@ def metricTot(annoted, detected, error_false_neg = 0.2, error_false_positive = 0
 	m2 = metricFalsePos(annoted, detected, error_false_positive)
 	return (m1+m2)/2
 
-def evaluate(folders = None, conn = None):
-	if folders is None:
-		p = "images_database"
-		folders = [p+"/Example", p+"/eyes", p+"/NoEllipses", p+"/Team01", p+"/Team02", p+"/Team03", p+"/Team04", 
-				   p+"/Team05", p+"/Team06", p+"/Team07",p+"/Team08", p+"/Team09", p+"/Team10"]
+def evaluate(conn = None):
+	folders = ["ReportImages"]
 	
 	if conn is None:
 		host = 'https://learn.cytomine.be'
@@ -49,7 +46,7 @@ def evaluate(folders = None, conn = None):
 		# Check https://docs.python.org/3.6/library/logging.html#logging-levels  to see other verbose level
 		print(conn.current_user)
 	else:
-		print("Using cytomine with user : {conn.current_user} .")
+		print("Using cytomine with user : {conn.current_user}")
 
 	# Get all images and annotations
 	# Dict with img name and id
@@ -61,17 +58,6 @@ def evaluate(folders = None, conn = None):
 		for image in image_instances:
 		    imgs_dict_id[image.filename] = image.id
 		    imgs_dict_height[image.filename] = image.height
-		    
-	# Lines images
-	resp = input(f'\nThe folders containing the images are "\n{folders}\n". Do you want to change them? [y, n] : ')
-	if resp == "y":
-		folders = []
-		while True:
-			path = input("What is the new path to a folder containing images? : ")
-			folders.append(path)
-			resp = input(f'The folder containing the images are "\n{folders}\n". Is there more? [y, n] : ')
-			if resp == "n":
-				break
 				
 	all_path = []
 	all_names = []
@@ -140,13 +126,10 @@ def evaluate(folders = None, conn = None):
 	m1 = 0
 	m2 = 0
 	m3 = 0
-	sys.stdout.write("\rProgress : 0% ")
-	sys.stdout.flush()
-	for i in range(len(lines_img)) :	
-		sys.stdout.write(
-			"\rProgress : %.2f%% " %((i+1) / len(lines_img) * 100))
-		sys.stdout.flush()
-		
+	to_display = []
+	to_display_metrics = []
+	to_display_names = []
+	for i in range(1) :			
 		name = lines_name[i]
 		type_img = None
 		if "sudoku" in name:
@@ -176,24 +159,71 @@ def evaluate(folders = None, conn = None):
 		img_annot = img_annot[:,:,2]
 		
 		# compute metrics
-		mn += metricNaive(img_annot/255, img_segment/255)
+		zeros = np.zeros((lines_img[i].shape[0], lines_img[i].shape[1]))
+		ones = np.ones((lines_img[i].shape[0], lines_img[i].shape[1]))
+		rands = np.random.randint(0, 2, size=(lines_img[i].shape[0], lines_img[i].shape[1]))
+		
+		# Detected	
+		mn = metricNaive(img_annot/255, img_segment/255)
 		m1_i = metricFalseNeg(img_annot/255, img_segment/255)
 		m2_i = metricFalsePos(img_annot/255, img_segment/255)
-		m1 += m1_i
-		m2 += m2_i
-		m3 += (m1_i+m2_i)/2
+		m3_i = (m1_i+m2_i)/2
+		img1 = lines_img[i]
+		img2 = cv2.merge([zeros,img_segment,zeros])
+		img3 = np.zeros((lines_img[i].shape[0], lines_img[i].shape[1], 3))
+		img3[:,:,2] = img_annot	
+		to_display.append([img1, img2, img3])
+		to_display_metrics.append([mn, m1_i, m2_i, m3_i])
+		to_display_names.append(name)
 		
-	mn = mn/len(lines_img)
-	m1 = m1/len(lines_img)
-	m2 = m2/len(lines_img)
-	m3 = m3/len(lines_img)
-
-	print(f"\n\nThe metrics are : \nmetricNaive = {mn}\nmetricFalseNeg = {m1}\nmetricFalsePos = {m2}\nmetricTot = {m3}")
-	# metricNaive = 0.9449283841739091
-	# metricFalseNeg = 0.7254580496023958
-	# metricFalsePos = 0.19360395605349934
-	# metricTot = 0.45953100282794757
-
+		# Nothing detected	
+		img_segment = zeros
+		mn = metricNaive(img_annot/255, img_segment/255)
+		m1_i = metricFalseNeg(img_annot/255, img_segment/255)
+		m2_i = metricFalsePos(img_annot/255, img_segment/255)
+		m3_i = (m1_i+m2_i)/2
+		img1 = lines_img[i]
+		img2 = cv2.merge([zeros,img_segment,zeros])
+		img3 = np.zeros((lines_img[i].shape[0], lines_img[i].shape[1], 3))
+		img3[:,:,2] = img_annot	
+		to_display.append([img1, img2, img3])
+		to_display_metrics.append([mn, m1_i, m2_i, m3_i])
+		to_display_names.append(name+" all pixels as not a line")
+		
+		# All detected
+		img_segment = ones*255
+		mn = metricNaive(img_annot/255, img_segment/255)
+		m1_i = metricFalseNeg(img_annot/255, img_segment/255)
+		m2_i = metricFalsePos(img_annot/255, img_segment/255)
+		m3_i = (m1_i+m2_i)/2
+		img1 = lines_img[i]
+		img2 = cv2.merge([zeros,img_segment,zeros])
+		img3 = np.zeros((lines_img[i].shape[0], lines_img[i].shape[1], 3))
+		img3[:,:,2] = img_annot	
+		to_display.append([img1, img2, img3])
+		to_display_metrics.append([mn, m1_i, m2_i, m3_i])
+		to_display_names.append(name+" all pixels as line")
+		
+		# All detected
+		img_segment = rands*255
+		mn = metricNaive(img_annot/255, img_segment/255)
+		m1_i = metricFalseNeg(img_annot/255, img_segment/255)
+		m2_i = metricFalsePos(img_annot/255, img_segment/255)
+		m3_i = (m1_i+m2_i)/2
+		img1 = lines_img[i]
+		img2 = np.zeros((lines_img[i].shape[0], lines_img[i].shape[1], 3))
+		img2[:,:,1] = img_segment
+		img3 = np.zeros((lines_img[i].shape[0], lines_img[i].shape[1], 3))
+		img3[:,:,2] = img_annot	
+		to_display.append([img1, img2, img3])
+		to_display_metrics.append([mn, m1_i, m2_i, m3_i])
+		to_display_names.append(name+" randomly detected")
+	
+	for i in range(len(to_display)):
+		if (i%4)==0:
+			multiDisplay([f'{to_display_names[i]}', 'Detected', 'Annoted'], to_display[i], 3)
+		print(f'\nThe metrics for image {to_display_names[i]} : \n\t metric naive : {to_display_metrics[i][0]}'+\
+		f'\n\t metric false neg. : {to_display_metrics[i][1]} \n\t metric false pos. : {to_display_metrics[i][2]}\n\t metric tot. : {to_display_metrics[i][3]}')
 
 if __name__ == '__main__':
 	evaluate()
