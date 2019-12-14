@@ -16,6 +16,7 @@ from classical import youghongQiangEllipse
 from imgTools import display, multiDisplay
 import matplotlib.pyplot as plt
 import sys
+from images_database.preprocess_eyes import img_eye_partial_preprocessing
 
 database_directory = os.path.join(os.getcwd(), 'images_database')
 annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
@@ -72,7 +73,8 @@ def get_model_data_eye_ellipse(folders = ["images_database/eyes/preprocess/"]):
 		                     and img.endswith(".png")])
 		                      
 	for path in lines_img_path:
-		image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)  # TODO preprocess
+		image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+		image = img_eye_partial_preprocessing(image)
 		images_list.append(image)
 		image_names.append(path.split("/")[-1])
 
@@ -102,7 +104,9 @@ def get_model_data_eye_no_ellipse(folders = ["images_database/eyes/noEllipses/fu
 	lines_img_path = sorted([img for img in all_path if ("noelps_eye" in img) and img.endswith(".png")])
 
 	for img_path in lines_img_path:  # fileName
-		images_list.append(cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)) # TODO preprocess
+		image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+		image = img_eye_partial_preprocessing(image)
+		images_list.append(image)
 
 	return images_list
 
@@ -153,7 +157,6 @@ def main(folders = None):
 			"\rProgress : %.2f%% \t - Value m1 = %.2f \t m2 = %.2f    " %((i+1) / lim * 100, m1 , m2))
 		sys.stdout.flush()
 		img = images_list[i]
-		#img = cv2.resize(img,(360, 200)) # Images resized to 360p
 		img = cv2.Canny(img, 20, 100)
 		ann = [[np.array(annotations_list[i], dtype=np.float32)]]
 		det = [detect_elps_classical(img)]
