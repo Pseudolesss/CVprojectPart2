@@ -43,6 +43,7 @@ def predict_image(input_image_path):
         angle = int(round(result[2]))
         color_test_image = cv2.imread(input_image_path, cv2.IMREAD_COLOR)
         cv2.ellipse(color_test_image, center, size, angle, 0, 360, (0, 255, 0), 1)
+        color_test_image = np.concatenate((cv2.cvtColor(preprocessed_image, cv2.COLOR_GRAY2BGR), color_test_image), axis=1)
         cv2.imshow('Ellipse', color_test_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()

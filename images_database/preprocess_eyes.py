@@ -74,13 +74,6 @@ def eyeFullPreprocessing(file, destinationFolder):
     # Final result image
     final_result = img_th + edges
 
-    # cv2.namedWindow("Results")
-    # img_concate = np.concatenate((img, img_norm, filtered, contrast, img_th, edges, final_result),
-    #                              axis=1)
-    # cv2.imshow('Results', img_concate)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
     cv2.imwrite(os.path.join(destinationFolder, imageName), final_result)
 
 def img_eye_partial_preprocessing(img):

@@ -1,46 +1,56 @@
-from pickle import dump, load
+from pickle import dump
 import numpy as np
 import cv2
 from keras_preprocessing.image import ImageDataGenerator
 import random
 import copy
+import csv
+
 
 def display_two_images(image1, image2):
-    result = np.concatenate((image1,image2), axis=1)
+    """ Utility function to display two images side by side"""
+    result = np.concatenate((image1, image2), axis=1)
 
     cv2.imshow("result", result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
 def display_images_with_new_anotations(image, annotations):
+    """ Utility function to display an image with its corresponding ellipses annotations"""
+
     result = np.copy(image)
 
     result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
 
     annotations = copy.deepcopy(annotations)
 
-
-
     for ellipse in annotations:
         coords = list()
         for i in range(0, len(ellipse), 2):
-            coords.append([int(ellipse[i]), int( result.shape[0] - ellipse[i+1])])
+            coords.append([int(ellipse[i]), int(result.shape[0] - ellipse[i + 1])])
 
         coords = np.array([coords], np.int32)
-        cv2.polylines(result, [coords], True, (0,0,255))
+        cv2.polylines(result, [coords], True, (0, 0, 255))
     cv2.imshow("result", result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
 def flip_image_and_annotations(image, arrayAnnotations):
+    """
+    This function take as input an image and its corresponding ellipses annotations.
+    It creates deep copy of them in order to apply a horizontal flip over the image
+    and modify the cytomine coordinates according to the modification.
+    It returns a 2-tuple composed of the flipped image and the modified annotations
+    """
+
     shape = image.shape
 
     modified_image = image.copy()
     arrayAnnotations = copy.deepcopy(arrayAnnotations)
     # Apply horizontal flipping
     cv2.flip(modified_image, 1, dst=modified_image)
-
-
 
     for ellipse in arrayAnnotations:
         for i in range(0, len(ellipse), 2):
@@ -53,6 +63,13 @@ def flip_image_and_annotations(image, arrayAnnotations):
 
 
 def random_y_offset_image_and_annotations(image, arrayAnnotations, isShiftUp):
+    """
+    This function take as arguments an image alongside its corresponding cytomine ellipse annotations and
+    a boolean indicating that this function will shift the pixel of the input image up or down.
+    The function will apply a 5% to 20% offset of the image height according to a uniform probability law.
+    It returns the modified image alongside the modified annotations in a 2-tuple
+    """
+
     shape = image.shape
 
     modified_image = image.copy()
@@ -69,7 +86,7 @@ def random_y_offset_image_and_annotations(image, arrayAnnotations, isShiftUp):
     else:
         sign = -1
 
-    #[5%, 20%] y offset
+    # [5%, 20%] y offset
     pixel_y_Offset = random.uniform(0.05, 0.2) * shape[0] * sign
 
     # Define dictionary enumerating parameters for the Keras image data generator
@@ -90,9 +107,17 @@ def random_y_offset_image_and_annotations(image, arrayAnnotations, isShiftUp):
     return (modified_image, arrayAnnotations, pixel_y_Offset)
 
 
-
-
 def random_zoom_image_and_annotations(image, arrayAnnotations, isZoomIn):
+    """
+    This function take as arguments an image alongside its corresponding cytomine ellipse annotations and
+    a boolean indicating that this function will zoom in or zoom out of the input image.
+    The function will "reduce" the size of the image of a factor 1.2 to 2 according to a uniform law if in Zoom Out mode.
+    The function wiil "reduce" the size of the image of a factor 0.8 to 0.95 according to a uniform law if in Zoom in mode.
+    The latter behavior is a dangerous one because it pushes out the ellipses out of bound. This is why the range is smaller
+    than for the Zoom out behavior.
+    It returns the modified image alongside the modified annotations in a 2-tuple
+    """
+
     shape = image.shape
 
     modified_image = image.copy()
@@ -111,7 +136,6 @@ def random_zoom_image_and_annotations(image, arrayAnnotations, isZoomIn):
 
     # Define dictionary enumerating parameters for the Keras image data generator
 
-
     params = {
         "zx": scaleFactor,
         "zy": scaleFactor
@@ -121,8 +145,8 @@ def random_zoom_image_and_annotations(image, arrayAnnotations, isZoomIn):
 
     for ellipse in arrayAnnotations:
         for i in range(0, len(ellipse), 2):
-            ellipse[i] = shape[1] / 2 + (1/scaleFactor) * (ellipse[i] - shape[1] / 2)
-            ellipse[i + 1] = shape[0] / 2 + (1/scaleFactor) * (ellipse[i + 1] - shape[0] / 2)
+            ellipse[i] = shape[1] / 2 + (1 / scaleFactor) * (ellipse[i] - shape[1] / 2)
+            ellipse[i + 1] = shape[0] / 2 + (1 / scaleFactor) * (ellipse[i + 1] - shape[0] / 2)
 
     # display_images_with_new_anotations(cv2.cvtColor(modified_image, cv2.COLOR_BGR2GRAY), arrayAnnotations)
 
@@ -130,17 +154,13 @@ def random_zoom_image_and_annotations(image, arrayAnnotations, isZoomIn):
 
     return (modified_image, arrayAnnotations, scaleFactor)
 
+
 def write_augmented_image(name, destinationFolder, image):
     cv2.imwrite(destinationFolder + name, image)
 
-import csv
 
-if __name__ == '__main__':
-
-    preprocessImageFolder = "./soccer/preprocessed1/"
-    saveAugmentedImagesDirectory = "./soccer/AugmentedDataset/"
-
-    with open('./CV2019_Annots_ElpsSoccer.csv', 'r') as myfile:
+def generate_full_augmented_soccer_dataset(preprocessImageFolder, saveAugmentedImagesDirectory, AnnotationsCSVPath):
+    with open(AnnotationsCSVPath, 'r') as myfile:
         csv_reader = csv.reader(myfile, delimiter=',')
 
         csv_list = list()
@@ -153,7 +173,7 @@ if __name__ == '__main__':
 
         dict = {}
         for ellipse in csv_list:
-            if ellipse[0] in dict.keys(): # If image already in dict, add ellipse
+            if ellipse[0] in dict.keys():  # If image already in dict, add ellipse
                 tmp = list(map(float, ellipse[1]))  # Transform string into float values
                 tmp1 = dict[ellipse[0]].copy()
                 tmp1.append(tmp)
@@ -163,7 +183,6 @@ if __name__ == '__main__':
                 tmp1 = list()
                 tmp1.append(tmp)
                 dict[ellipse[0]] = tmp1
-
 
         # Dictionary to get the final annotations of the augmented dataset
         finalDict = {}
@@ -182,7 +201,6 @@ if __name__ == '__main__':
             write_augmented_image(augmented_name, saveAugmentedImagesDirectory, augmented_image)
             finalDict[augmented_name] = augmented_annotation
 
-
         # tmp object because dict change size during loop
         tmp = finalDict.copy()
         for flipImageName in tmp.keys():
@@ -194,28 +212,35 @@ if __name__ == '__main__':
 
             # Produce twice Shifts and Zoom out
             for nb in range(2):
-                (augmented_image, augmented_annotation, factor) = random_y_offset_image_and_annotations(image, finalDict[flipImageName], True)
+                (augmented_image, augmented_annotation, factor) = random_y_offset_image_and_annotations(image,
+                                                                                                        finalDict[
+                                                                                                            flipImageName],
+                                                                                                        True)
                 augmented_name = "SHIFT_UP_" + str(factor) + "_" + flipImageName
                 write_augmented_image(augmented_name, saveAugmentedImagesDirectory, augmented_image)
                 finalDict[augmented_name] = augmented_annotation
 
-                (augmented_image, augmented_annotation, factor) = random_y_offset_image_and_annotations(image, finalDict[flipImageName], False)
+                (augmented_image, augmented_annotation, factor) = random_y_offset_image_and_annotations(image,
+                                                                                                        finalDict[
+                                                                                                            flipImageName],
+                                                                                                        False)
                 augmented_name = "SHIFT_DOWN_" + str(factor) + "_" + flipImageName
                 write_augmented_image(augmented_name, saveAugmentedImagesDirectory, augmented_image)
                 finalDict[augmented_name] = augmented_annotation
 
-                (augmented_image, augmented_annotation, factor) = random_zoom_image_and_annotations(image, finalDict[flipImageName], False)
+                (augmented_image, augmented_annotation, factor) = random_zoom_image_and_annotations(image, finalDict[
+                    flipImageName], False)
                 augmented_name = "ZOOM_OUT_" + str(int(100 * factor)) + "_" + flipImageName
                 write_augmented_image(augmented_name, saveAugmentedImagesDirectory, augmented_image)
                 finalDict[augmented_name] = augmented_annotation
 
-            #Once zoom in
+            # Once zoom in
 
-            (augmented_image, augmented_annotation, factor) = random_zoom_image_and_annotations(image, finalDict[flipImageName], True)
+            (augmented_image, augmented_annotation, factor) = random_zoom_image_and_annotations(image, finalDict[
+                flipImageName], True)
             augmented_name = "ZOOM_IN_" + str(int(100 * factor)) + "_" + flipImageName
             write_augmented_image(augmented_name, saveAugmentedImagesDirectory, augmented_image)
             finalDict[augmented_name] = augmented_annotation
-
 
         # Apply preprocess for original version only
         for imageName in dict.keys():
@@ -261,9 +286,13 @@ if __name__ == '__main__':
         dfg = open(saveAugmentedImagesDirectory + "AugmentedAnnotations.pkl", 'wb')
         dump(finalDict, dfg)
         dfg.close()
-        #
-        # # recharge
-        # aze = open(fichier, 'rb')
-        # dico = load(aze)
-        # aze.close()
 
+
+if __name__ == '__main__':
+    print("Uncomment the comment to proceed to a full generation of an augmented dataset for soccer")
+
+    # preprocessImageFolder = "./soccer/preprocessed1/"
+    # saveAugmentedImagesDirectory = "./soccer/AugmentedDataset/"
+    # annotationsPath = "./CV2019_Annots_ElpsSoccer.csv"
+    #
+    # generate_full_augmented_soccer_dataset(preprocessImageFolder, saveAugmentedImagesDirectory, annotationsPath)
