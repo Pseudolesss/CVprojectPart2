@@ -1,12 +1,18 @@
 from images_database.preprocess_eyes import img_eye_partial_preprocessing
 from keras.models import model_from_json
-from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
+from keras.optimizers import Adadelta
 import numpy as np
 from models import define_custom_loss
 import cv2
 
 
 def predict_image(input_image_path):
+    """
+    Take as input a path of a png image and send in result the array of ellipses detected ( empty if no detected)
+    Print the resulting ellipse
+    :param input_image_path: path to an image file
+    :return: np.array of ellipse detected (np.array of 5 parameters)
+    """
     # First step : Preprocess the image
     input_image = cv2.imread(input_image_path, cv2.IMREAD_GRAYSCALE)
     preprocessed_image = img_eye_partial_preprocessing(input_image)

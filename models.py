@@ -1,6 +1,6 @@
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout
-from keras.optimizers import SGD, Adadelta, RMSprop, Adam, Adagrad
+from keras.optimizers import Adadelta
 import keras.backend as k
 
 
@@ -8,6 +8,13 @@ import keras.backend as k
 # classic : 412, improved ( angle 1/10 and last dense 256) : 308
 
 def dist(y_true, y_pred, weight):
+    """
+    compute the weighted distance between y_true and y_pred
+    :param y_true: true y
+    :param y_pred: predicted y
+    :param weight: weight
+    :return: distance between y_true and y_pred
+    """
     # Use keras instead of numpy in order to avoid symbolic / non symbolic conflicts in the custom loss
     diff = k.abs(y_true - y_pred)
     diff = diff * weight
@@ -15,7 +22,13 @@ def dist(y_true, y_pred, weight):
     diff = k.sum(diff)
     return diff
 
+
 def define_custom_loss(weight=None):
+    """
+    define the custom function that will be used by keras
+    :param weight: weight
+    :return: custom function
+    """
     if weight is None:
         weight = [1 / 2, 1 / 2, 1 / 10, 1 / 3, 1 / 3]
 
@@ -25,6 +38,13 @@ def define_custom_loss(weight=None):
 
 
 def create_model_classification_eye(modelName, img_height, img_width):
+    """
+    Create the model used for the classification of eyes
+    :param modelName: name of the model
+    :param img_height: height of image
+    :param img_width: width of image
+    :return: model created
+    """
     # Start creating the model
     model = Sequential(name=modelName)
 
@@ -64,6 +84,13 @@ def create_model_classification_eye(modelName, img_height, img_width):
     return model
 
 def create_model_classification_soccer(modelName, img_height, img_width):
+    """
+    Create the model used for the classification of soccer
+    :param modelName: name of the model
+    :param img_height: height of image
+    :param img_width: width of image
+    :return: model created
+    """
     # Start creating the model
     model = Sequential(name=modelName)
 
@@ -100,7 +127,6 @@ def create_model_classification_soccer(modelName, img_height, img_width):
     model.add(Dense(4, activation="softmax"))
 
     # optimizer
-    # opt = Adadelta()
     opt = Adadelta()
 
     # compile model
@@ -112,6 +138,13 @@ def create_model_classification_soccer(modelName, img_height, img_width):
 
 
 def create_model_regression_eye(modelName, img_height, img_width):
+    """
+    Create the model used for the regression of eyes
+    :param modelName: name of the model
+    :param img_height: height of image
+    :param img_width: width of image
+    :return: model created
+    """
     # Start creating the model
     model = Sequential(name=modelName)
 
@@ -150,17 +183,7 @@ def create_model_regression_eye(modelName, img_height, img_width):
     model.add(Dense(5, activation="linear"))
 
     # optimizer
-    """
-    Comparison with all other parameters same (10 epochs, first version custom loss, first version model) :
-    Adadelta = 1241
-    RMSprop = 1750
-    Adam = 1211
-    Adagrad = 1023
-    """
     opt = Adadelta()
-    # opt = RMSprop(learning_rate=0.0001, decay=1e-6)
-    # opt = Adam()
-    # opt = Adagrad()
 
     # compile model
     loss = define_custom_loss()
@@ -172,6 +195,13 @@ def create_model_regression_eye(modelName, img_height, img_width):
 
 
 def create_model_regression_soccer(modelName, img_height, img_width):
+    """
+    Create the model used for the regression of soccer
+    :param modelName: name of the model
+    :param img_height: height of image
+    :param img_width: width of image
+    :return: model created
+    """
 
     # Start creating the model
     model = Sequential(name=modelName)
@@ -204,7 +234,15 @@ def create_model_regression_soccer(modelName, img_height, img_width):
     # Layers for fully connected network and connect it to boolean output
     model.add(Flatten())
 
-    model.add(Dense(256, activation="relu"))
+    model.add(Dense(512, activation="relu"))
+
+    model.add(Dropout(0.4))
+
+    model.add(Dense(1024, activation="relu"))
+
+    model.add(Dropout(0.4))
+
+    model.add(Dense(512, activation="relu"))
 
     model.add(Dropout(0.4))
 
@@ -212,24 +250,18 @@ def create_model_regression_soccer(modelName, img_height, img_width):
 
     model.add(Dropout(0.4))
 
-    model.add(Dense(256, activation="relu"))
+    model.add(Dense(128, activation="relu"))
 
     model.add(Dropout(0.4))
+
+    # model.add(Dense(64, activation="relu"))
+    #
+    # model.add(Dropout(0.4))
 
     model.add(Dense(4, activation="linear"))
 
     # optimizer
-    """
-    Comparison with all other parameters same (10 epochs, first version custom loss, first version model) :
-    Adadelta = 1241
-    RMSprop = 1750
-    Adam = 1211
-    Adagrad = 1023
-    """
     opt = Adadelta()
-    # opt = RMSprop(learning_rate=0.0001, decay=1e-6)
-    # opt = Adam()
-    # opt = Adagrad()
 
     # compile model
     model.compile(loss="mean_squared_error", optimizer=opt, metrics=['accuracy'])

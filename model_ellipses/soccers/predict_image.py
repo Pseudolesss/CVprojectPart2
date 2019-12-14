@@ -6,6 +6,12 @@ import cv2
 
 
 def predict_image (input_image_path):
+    """
+    Take as input a path of a png image and send in result the array of ellipses detected ( empty if no detected)
+    Print the resulting ellipses
+    :param input_image_path: path to an image file
+    :return: np.array of ellipse detected (np.array of the 4 bounding box param.)
+    """
     dim = (320, 180)
 
     # First step : Preprocess the image
@@ -33,12 +39,13 @@ def predict_image (input_image_path):
     loaded_model_regr.compile(loss="mean_squared_error", optimizer=Adadelta(), metrics=['accuracy'])
     ellipses_detected = []
     observation_image = image.copy()
+    # Each time a ellipse is predicted, we remove it from the image and we predict the modified image until no more ell.
     for i in range(number_ellipses):
         result = loaded_model_regr.predict(np.reshape(image, [1, 180, 320, 1]))[0]
         ellipses_detected.append(result)
         cv2.rectangle(image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), 0, -1)
         cv2.rectangle(observation_image, (int(result[0]), int(result[1])), (int(result[2]), int(result[3])), 255, 1)
-        cv2.imshow('Rectangle', image)
+        cv2.imshow('Ellipse ' + str(i), image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     print(ellipses_detected)
