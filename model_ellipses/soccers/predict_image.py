@@ -11,7 +11,7 @@ def predict_image (input_image_path):
     Take as input a path of a png image and send in result the array of ellipses detected ( empty if no detected)
     Print the resulting ellipses
     :param input_image_path: path to an image file
-    :return: np.array of ellipse detected (np.array of the 4 bounding box param.)
+    :return: number of detected ellipses and np.array of ellipses detected (np.array of the 4 bounding box param.)
     """
     dim = (320, 180)
 
@@ -51,7 +51,7 @@ def predict_image (input_image_path):
         display("Ellipse 1", image, 10, 10)
     print(ellipses_detected)
     display("All ellipses", color_image, 10, 10)
-    return ellipses_detected
+    return number_ellipses, ellipses_detected
 
 
 if __name__ == '__main__':

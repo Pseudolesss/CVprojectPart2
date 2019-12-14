@@ -9,7 +9,8 @@ from keras.optimizers import Adadelta
 from models import define_custom_loss
 from imgTools import display
 
-# Best result :
+# Best result : (200) : 311 loss 94 accuracy
+
 def trainRegressor(modelName, images_list_eye, annotations_list_eye, nb_epochs, batch_size):
     """
     Take the data as input, split and correctly reshape it.

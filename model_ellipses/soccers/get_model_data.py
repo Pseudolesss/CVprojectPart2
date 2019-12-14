@@ -8,7 +8,7 @@ from pickle import dump, load
 from imgTools import display
 
 database_directory = os.path.join(os.getcwd(), '../../images_database')
-annotationFile = os.path.join(database_directory, 'CV2019_Annots.csv')
+annotationFile = os.path.join(database_directory, 'CV2019_Annots_ElpsSoccer.csv')
 
 
 def points_to_annotations(annotations_dict, image_name, points):
@@ -48,10 +48,8 @@ def extract_annotations_soccer():
         csv_reader = csv.reader(csv_file, delimiter=',')
 
         result = []
-        # Take only the ellipses soccer rows
         for row in csv_reader:
-            if 'elps_soccer' in row[0]:
-                result.append([row[1:], row[0]])
+            result.append([row[2:], row[0]])
 
         for soccer, image_name in result:
             tmp = np.array(soccer[1:], dtype=np.float32)
